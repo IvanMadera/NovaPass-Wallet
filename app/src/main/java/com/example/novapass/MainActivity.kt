@@ -97,7 +97,7 @@ fun TicketListScreen(
     var selectedUri by remember { mutableStateOf<Uri?>(null) }
 
     val filePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
+        contract = ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
         selectedUri = uri
     }
@@ -140,7 +140,7 @@ fun TicketListScreen(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Button(
-                            onClick = { filePickerLauncher.launch("application/pdf") },
+                            onClick = { filePickerLauncher.launch(arrayOf("application/pdf")) },
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(if (selectedUri == null) "Seleccionar PDF" else "PDF Seleccionado")
