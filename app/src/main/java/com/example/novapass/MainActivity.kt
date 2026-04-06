@@ -42,10 +42,16 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import android.content.Context
+import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
+import com.tom_roush.pdfbox.pdmodel.PDDocument
+import com.tom_roush.pdfbox.text.PDFTextStripper
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        PDFBoxResourceLoader.init(applicationContext)
         enableEdgeToEdge()
         setContent {
             NovaPassTheme {
@@ -95,11 +101,21 @@ fun TicketListScreen(
     var showDialog by remember { mutableStateOf(false) }
     var ticketName by remember { mutableStateOf("") }
     var selectedUri by remember { mutableStateOf<Uri?>(null) }
+    val coroutineScope = rememberCoroutineScope()
+    var isVerifying by remember { mutableStateOf(false) }
 
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
         selectedUri = uri
+        if (uri != null && ticketName.isBlank()) {
+            coroutineScope.launch {
+                val extractedTitle = getPdfTitle(context, uri).uppercase()
+                if (extractedTitle.isNotBlank()) {
+                    ticketName = extractedTitle
+                }
+            }
+        }
     }
 
     Scaffold(
@@ -141,34 +157,48 @@ fun TicketListScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                         Button(
                             onClick = { filePickerLauncher.launch(arrayOf("application/pdf")) },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth().height(48.dp),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
                         ) {
-                            Text(if (selectedUri == null) "Seleccionar PDF" else "PDF Seleccionado")
+                            Text(
+                                text = if (selectedUri == null) "Seleccionar Boleto" else "Boleto Seleccionado",
+                                style = MaterialTheme.typography.titleMedium
+                            )
                         }
                     }
                 },
                 confirmButton = {
                     TextButton(
                         onClick = {
-                            selectedUri?.let {
-                                // Take persistable permission if possible
-                                try {
-                                    context.contentResolver.takePersistableUriPermission(
-                                        it,
-                                        Intent.FLAG_GRANT_READ_URI_PERMISSION
-                                    )
-                                } catch (e: Exception) {
-                                    // Ignore if not possible
+                            selectedUri?.let { uri ->
+                                isVerifying = true
+                                coroutineScope.launch {
+                                    val isValid = isValidTicket(context, uri)
+                                    isVerifying = false
+                                    if (isValid) {
+                                        try {
+                                            context.contentResolver.takePersistableUriPermission(
+                                                uri,
+                                                Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                            )
+                                        } catch (e: Exception) {}
+                                        onAddTicket(ticketName, uri)
+                                        showDialog = false
+                                        ticketName = ""
+                                        selectedUri = null
+                                    } else {
+                                        android.widget.Toast.makeText(context, "El PDF no contiene palabras clave de boleto válido.", android.widget.Toast.LENGTH_LONG).show()
+                                    }
                                 }
-                                onAddTicket(ticketName, it)
-                                showDialog = false
-                                ticketName = ""
-                                selectedUri = null
                             }
                         },
-                        enabled = ticketName.isNotBlank() && selectedUri != null
+                        enabled = ticketName.isNotBlank() && selectedUri != null && !isVerifying
                     ) {
-                        Text("Agregar")
+                        if (isVerifying) {
+                            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                        } else {
+                            Text("Agregar")
+                        }
                     }
                 },
                 dismissButton = {
@@ -198,7 +228,7 @@ fun TicketItem(ticket: TicketEntity, onClick: () -> Unit, onDelete: () -> Unit) 
         ) {
             Column {
                 Text(text = ticket.name, style = MaterialTheme.typography.titleMedium)
-                Text(text = "PDF Ticket", style = MaterialTheme.typography.bodySmall)
+                Text(text = "Ticket Digital", style = MaterialTheme.typography.bodySmall)
             }
             IconButton(onClick = onDelete) {
                 Icon(Icons.Default.Delete, contentDescription = "Delete")
@@ -216,11 +246,24 @@ fun PdfViewerScreen(uri: Uri, onBack: () -> Unit) {
     var pageCount by remember { mutableIntStateOf(0) }
     val renderMutex = remember { Mutex() }
 
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val screenWidthPx = with(density) { configuration.screenWidthDp.dp.toPx() }
+    val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
+
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(androidx.compose.ui.geometry.Offset.Zero) }
     val transformableState = rememberTransformableState { zoomChange, offsetChange, _ ->
         scale = (scale * zoomChange).coerceIn(1f, 5f)
-        offset += offsetChange * scale
+        if (scale == 1f) {
+            offset = androidx.compose.ui.geometry.Offset.Zero
+        } else {
+            val maxX = (screenWidthPx * scale - screenWidthPx) / 2f
+            val maxY = (screenHeightPx * scale - screenHeightPx) / 2f * pageCount.coerceAtLeast(1)
+            val newX = (offset.x + offsetChange.x * scale).coerceIn(-maxX, maxX)
+            val newY = (offset.y + offsetChange.y * scale).coerceIn(-maxY, maxY)
+            offset = androidx.compose.ui.geometry.Offset(newX, newY)
+        }
     }
 
     DisposableEffect(uri) {
@@ -326,5 +369,61 @@ fun PdfPageImage(pdfRenderer: PdfRenderer, pageIndex: Int, renderMutex: Mutex) {
         ) {
             CircularProgressIndicator()
         }
+    }
+}
+
+suspend fun isValidTicket(context: Context, uri: Uri): Boolean {
+    return withContext(Dispatchers.IO) {
+        try {
+            val fd = context.contentResolver.openFileDescriptor(uri, "r")
+            if (fd != null) {
+                val inputStream = context.contentResolver.openInputStream(uri)
+                if (inputStream != null) {
+                    val document = PDDocument.load(inputStream)
+                    val stripper = PDFTextStripper()
+                    stripper.startPage = 1
+                    stripper.endPage = 2
+                    val text = stripper.getText(document).lowercase()
+                    document.close()
+                    inputStream.close()
+                    
+                    val keywords = listOf("boleto", "ticket", "butaca", "fila", "sector", "zona", "acceso", "seat", "row", "section")
+                    for (keyword in keywords) {
+                        if (text.contains(keyword)) {
+                            return@withContext true
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return@withContext false
+    }
+}
+
+suspend fun getPdfTitle(context: Context, uri: Uri): String {
+    return withContext(Dispatchers.IO) {
+        var title = ""
+        try {
+            context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                val nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                if (cursor.moveToFirst() && nameIndex >= 0) {
+                    val displayName = cursor.getString(nameIndex)
+                    title = displayName.substringBeforeLast(".")
+                }
+            }
+            val inputStream = context.contentResolver.openInputStream(uri)
+            if (inputStream != null) {
+                val document = PDDocument.load(inputStream)
+                val pdfTitle = document.documentInformation?.title
+                document.close()
+                inputStream.close()
+                if (!pdfTitle.isNullOrBlank()) {
+                    title = pdfTitle
+                }
+            }
+        } catch (e: Exception) {}
+        return@withContext title
     }
 }

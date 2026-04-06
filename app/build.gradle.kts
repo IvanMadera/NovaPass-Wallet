@@ -61,6 +61,9 @@ dependencies {
     implementation(libs.core.ktx)
     ksp(libs.androidx.room.compiler)
     
+    // PDF Parsing for verification
+    implementation(libs.pdfbox.android)
+    
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
