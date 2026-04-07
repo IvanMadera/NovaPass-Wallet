@@ -25,6 +25,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.foundation.Canvas
 import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -38,11 +41,13 @@ import com.example.novapass.ui.theme.NovaInputBackground
 import android.content.Intent
 import android.content.Context
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.text.PDFTextStripper
+import android.widget.Toast
 
 import android.graphics.pdf.PdfRenderer
 import androidx.compose.foundation.Image
@@ -136,6 +141,7 @@ fun TicketListScreen(
     val coroutineScope = rememberCoroutineScope()
     var isVerifying by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
+    var ticketToDelete by remember { mutableStateOf<TicketEntity?>(null) }
 
     val categories = listOf("Concierto", "Cine", "Deportes", "Otro")
 
@@ -162,17 +168,23 @@ fun TicketListScreen(
                     }
                 }
                 
-                // Extracción Inteligente
-                val data = extractTicketData(context, uri)
-                // Rellenar en tiempo real como sugerido
-                ticketName = data.eventName
-                selectedCategory = data.category
-                eventDate = data.date
-                eventTime = data.time
-                section = data.section
-                row = data.row
-                seat = data.seat
-                
+                // Validar si es un boleto real
+                if (isValidTicket(context, uri)) {
+                    // Extracción Inteligente
+                    val data = extractTicketData(context, uri)
+                    // Rellenar en tiempo real como sugerido
+                    ticketName = data.eventName
+                    selectedCategory = data.category
+                    eventDate = data.date
+                    eventTime = data.time
+                    section = data.section
+                    row = data.row
+                    seat = data.seat
+                } else {
+                    Toast.makeText(context, "El archivo no parece ser un boleto válido", Toast.LENGTH_LONG).show()
+                    selectedUri = null
+                    selectedFileName = ""
+                }
                 isVerifying = false
             }
         }
@@ -247,6 +259,61 @@ fun TicketListScreen(
                 }
             }
 
+            // MODAL DE CONFIRMACIÓN DE ELIMINACIÓN
+            if (ticketToDelete != null) {
+                AlertDialog(
+                    onDismissRequest = { ticketToDelete = null },
+                    containerColor = Color(0xFF172321), // Gris Premium de NovaPass
+                    shape = RoundedCornerShape(24.dp),
+                    title = {
+                        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                            Text(
+                                "Eliminar boleto",
+                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                                color = Color.White
+                            )
+                        }
+                    },
+                    text = {
+                        Text(
+                            "Esta acción no se puede deshacer. El boleto será eliminado permanentemente.",
+                            textAlign = TextAlign.Center,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.White.copy(alpha = 0.7f),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    },
+                    confirmButton = {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            OutlinedButton(
+                                onClick = { ticketToDelete = null },
+                                modifier = Modifier.weight(1f).height(48.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.1f)),
+                                shape = RoundedCornerShape(24.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
+                            ) {
+                                Text("Cancelar", style = MaterialTheme.typography.labelLarge)
+                            }
+                            
+                            Button(
+                                onClick = {
+                                    ticketToDelete?.let { viewModel.removeTicket(it) }
+                                    ticketToDelete = null
+                                },
+                                modifier = Modifier.weight(1f).height(48.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                                shape = RoundedCornerShape(24.dp)
+                            ) {
+                                Text("Eliminar", color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.labelLarge)
+                            }
+                        }
+                    }
+                )
+            }
+
             // SEARCH BAR
             OutlinedTextField(
                 value = searchQuery,
@@ -280,7 +347,7 @@ fun TicketListScreen(
                         TicketItem(
                             ticket = ticket,
                             onClick = { onTicketClick(ticket) },
-                            onDelete = { viewModel.removeTicket(ticket) }
+                            onDelete = { ticketToDelete = ticket }
                         )
                     }
                 }
@@ -527,6 +594,14 @@ fun TicketListScreen(
                         onClick = {
                             selectedUri?.let { uri ->
                                 coroutineScope.launch {
+                                    try {
+                                        context.contentResolver.takePersistableUriPermission(
+                                            uri,
+                                            Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                        )
+                                    } catch (e: Exception) {
+                                        e.printStackTrace()
+                                    }
                                     onAddTicket(ticketName, uri, selectedCategory, eventDate, eventTime, location, section, row, seat)
                                     showBottomSheet = false
                                 }
@@ -610,117 +685,162 @@ fun TicketItem(ticket: TicketEntity, onClick: () -> Unit, onDelete: () -> Unit) 
         "Concierto" -> Icons.Default.MusicNote
         "Deportes" -> Icons.Default.SportsBaseball
         "Cine" -> Icons.Default.Movie
-        "Teatro" -> Icons.Default.TheaterComedy
-        "Vuelo" -> Icons.Default.Flight
-        "Tren" -> Icons.Default.Train
-        "Autobús" -> Icons.Default.DirectionsBus
         else -> Icons.Default.ConfirmationNumber
     }
+
+    // Color de fondo para el cuerpo que resalte un poco más (#252836)
+    val bodyBackgroundColor = Color(0xFF252836) 
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clip(RoundedCornerShape(16.dp))
             .clickable { onClick() },
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(IntrinsicSize.Min),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Franja dorada decorativa a la izquierda
+        Column(modifier = Modifier.fillMaxWidth()) {
+            // Capa Superior (Header) 
             Box(
                 modifier = Modifier
-                    .fillMaxHeight()
-                    .width(6.dp)
-                    .background(MaterialTheme.colorScheme.primary)
-            )
-            
-            Row(
-                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFF172321))
                     .padding(16.dp)
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Icono de Categoría
-                Surface(
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            categoryIcon,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(24.dp)
-                        )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(
+                        color = Color.White.copy(alpha = 0.05f),
+                        shape = CircleShape,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                categoryIcon,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
                     }
-                }
-                
-                Spacer(modifier = Modifier.width(16.dp))
-                
-                Column(modifier = Modifier.weight(1f)) {
+                    
+                    Spacer(modifier = Modifier.width(12.dp))
+                    
                     Text(
-                        text = ticket.name,
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1
+                        text = ticket.name.uppercase(),
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                        color = Color.White,
+                        maxLines = 2,
+                        lineHeight = 18.sp,
+                        modifier = Modifier.weight(1f)
                     )
                     
-                    if (!ticket.section.isNullOrBlank() || !ticket.seat.isNullOrBlank()) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            if (!ticket.section.isNullOrBlank()) {
-                                Surface(
-                                    color = MaterialTheme.colorScheme.surfaceVariant,
-                                    shape = RoundedCornerShape(4.dp)
-                                ) {
-                                    Text(
-                                        text = "SEC ${ticket.section}",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                            if (!ticket.seat.isNullOrBlank()) {
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Surface(
-                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                                    shape = RoundedCornerShape(4.dp)
-                                ) {
-                                    Text(
-                                        text = "ASIEN ${ticket.seat}",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                            }
-                        }
-                    } else {
-                        Text(
-                            text = "Boleto Digital",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
+                    IconButton(
+                        onClick = onDelete,
+                        modifier = Modifier.size(24.dp),
+                        colors = IconButtonDefaults.iconButtonColors(contentColor = Color.White.copy(alpha = 0.3f))
+                    ) {
+                        Icon(Icons.Default.Close, contentDescription = "Eliminar", modifier = Modifier.size(16.dp))
                     }
                 }
+            }
+
+            // Capa de Conexión (Perforación)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(24.dp)
+            ) {
+                Column {
+                    Box(modifier = Modifier.fillMaxWidth().weight(1f).background(Color(0xFF172321)))
+                    Box(modifier = Modifier.fillMaxWidth().weight(1f).background(bodyBackgroundColor))
+                }
                 
-                IconButton(
-                    onClick = onDelete,
-                    colors = IconButtonDefaults.iconButtonColors(
-                        contentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                Surface(
+                    modifier = Modifier.offset(x = (-12).dp).align(Alignment.CenterStart).size(24.dp),
+                    color = MaterialTheme.colorScheme.background,
+                    shape = CircleShape
+                ) {}
+                
+                Surface(
+                    modifier = Modifier.offset(x = (12).dp).align(Alignment.CenterEnd).size(24.dp),
+                    color = MaterialTheme.colorScheme.background,
+                    shape = CircleShape
+                ) {}
+                
+                Canvas(modifier = Modifier.fillMaxWidth().align(Alignment.Center).padding(horizontal = 24.dp)) {
+                    drawLine(
+                        color = Color.White.copy(alpha = 0.1f),
+                        start = Offset(0f, 0f),
+                        end = Offset(size.width, 0f),
+                        strokeWidth = 2f,
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
                     )
-                ) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete")
+                }
+            }
+
+            // Capa Inferior (Body)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(bodyBackgroundColor)
+                    .padding(start = 16.dp, end = 16.dp, bottom = 16.dp, top = 4.dp)
+            ) {
+                // Fila de Fecha y Hora (AM/PM)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Event, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        ticket.eventDate ?: "Fecha TBD",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White.copy(alpha = 0.7f)
+                    )
+                    
+                    Spacer(modifier = Modifier.width(16.dp))
+                    
+                    Icon(Icons.Default.AccessTime, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    
+                    val formattedTime = remember(ticket.eventTime) {
+                        try {
+                            if (ticket.eventTime.isNullOrBlank()) "--:--"
+                            else {
+                                val sdf24 = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+                                val sdf12 = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault())
+                                val date = sdf24.parse(ticket.eventTime)
+                                if (date != null) sdf12.format(date) else ticket.eventTime
+                            }
+                        } catch (e: Exception) {
+                            ticket.eventTime ?: "--:--"
+                        }
+                    }
+                    
+                    Text(
+                        formattedTime,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White.copy(alpha = 0.7f)
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                // Fila de Ubicación/Asiento Combinada
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.EventSeat, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    
+                    val locationParts = mutableListOf<String>()
+                    if (!ticket.section.isNullOrBlank()) locationParts.add("Sección ${ticket.section}")
+                    if (!ticket.row.isNullOrBlank()) locationParts.add("Fila ${ticket.row}")
+                    if (!ticket.seat.isNullOrBlank()) locationParts.add("Asiento ${ticket.seat}")
+                    
+                    val locationText = if (locationParts.isEmpty()) "Boleto Digital" else locationParts.joinToString(" | ")
+                    
+                    Text(
+                        locationText.uppercase(),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White.copy(alpha = 0.8f),
+                        maxLines = 1
+                    )
                 }
             }
         }
