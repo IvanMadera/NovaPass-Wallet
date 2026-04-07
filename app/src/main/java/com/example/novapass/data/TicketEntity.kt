@@ -16,5 +16,6 @@ data class TicketEntity(
     val section: String? = null,
     val row: String? = null,
     val seat: String? = null,
-    val thumbnailPath: String? = null
+    val thumbnailPath: String? = null,
+    val pageIndex: Int = 0
 )

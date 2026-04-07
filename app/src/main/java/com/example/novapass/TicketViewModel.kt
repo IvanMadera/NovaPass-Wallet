@@ -31,7 +31,8 @@ class TicketViewModel(application: Application) : AndroidViewModel(application) 
         location: String? = null,
         section: String? = null,
         row: String? = null,
-        seat: String? = null
+        seat: String? = null,
+        pageIndex: Int = 0
     ) {
         viewModelScope.launch {
             val newTicket = TicketEntity(
@@ -44,7 +45,8 @@ class TicketViewModel(application: Application) : AndroidViewModel(application) 
                 location = location,
                 section = section,
                 row = row,
-                seat = seat
+                seat = seat,
+                pageIndex = pageIndex
             )
             ticketDao.insertTicket(newTicket)
         }

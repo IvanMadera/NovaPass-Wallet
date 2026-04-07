@@ -70,7 +70,8 @@ data class ExtractedTicketData(
     val location: String = "",
     val section: String = "",
     val row: String = "",
-    val seat: String = ""
+    val seat: String = "",
+    val pageIndex: Int = 0
 )
 
 class MainActivity : ComponentActivity() {
@@ -95,20 +96,24 @@ fun NovaPassApp(viewModel: TicketViewModel = viewModel()) {
             TicketListScreen(
                 viewModel = viewModel,
                 onTicketClick = { ticket ->
-                    navController.navigate("ticketDetail/${Uri.encode(ticket.uri)}")
+                    navController.navigate("ticketDetail/${Uri.encode(ticket.uri)}/${ticket.pageIndex}")
                 },
-                onAddTicket = { name, uri, category, eventDate, eventTime, location, section, row, seat ->
-                    viewModel.addTicket(name, uri, category, eventDate, eventTime, location, section, row, seat)
+                onAddTicket = { name, uri, category, eventDate, eventTime, location, section, row, seat, pageIndex ->
+                    viewModel.addTicket(name, uri, category, eventDate, eventTime, location, section, row, seat, pageIndex)
                 }
             )
         }
         composable(
-            "ticketDetail/{pdfUri}",
-            arguments = listOf(navArgument("pdfUri") { type = NavType.StringType })
+            "ticketDetail/{pdfUri}/{pageIndex}",
+            arguments = listOf(
+                navArgument("pdfUri") { type = NavType.StringType },
+                navArgument("pageIndex") { type = NavType.IntType }
+            )
         ) { backStackEntry ->
             val pdfUriString = backStackEntry.arguments?.getString("pdfUri")
+            val pageIndex = backStackEntry.arguments?.getInt("pageIndex") ?: 0
             if (pdfUriString != null) {
-                PdfViewerScreen(uri = pdfUriString.toUri(), onBack = { navController.popBackStack() })
+                PdfViewerScreen(uri = pdfUriString.toUri(), pageIndex = pageIndex, onBack = { navController.popBackStack() })
             }
         }
     }
@@ -119,7 +124,7 @@ fun NovaPassApp(viewModel: TicketViewModel = viewModel()) {
 fun TicketListScreen(
     viewModel: TicketViewModel,
     onTicketClick: (TicketEntity) -> Unit,
-    onAddTicket: (String, Uri, String, String?, String?, String?, String?, String?, String?) -> Unit
+    onAddTicket: (String, Uri, String, String?, String?, String?, String?, String?, String?, Int) -> Unit
 ) {
     val context = LocalContext.current
     val tickets by viewModel.tickets.collectAsState()
@@ -138,6 +143,7 @@ fun TicketListScreen(
     
     var selectedUri by remember { mutableStateOf<Uri?>(null) }
     var selectedFileName by remember { mutableStateOf("") }
+    var currentPageIndex by remember { mutableIntStateOf(0) }
     val coroutineScope = rememberCoroutineScope()
     var isVerifying by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
@@ -200,6 +206,7 @@ fun TicketListScreen(
                             section = data.section
                             row = data.row
                             seat = data.seat
+                            currentPageIndex = data.pageIndex
                         } else {
                             // Si hay varios, el nombre común del primer boleto se usa como referencia
                             ticketName = dataList[0].eventName
@@ -843,7 +850,6 @@ fun TicketListScreen(
                                         e.printStackTrace()
                                     }
                                     if (pendingTickets.size > 1) {
-                                        // Guardar todos los boletos detectados
                                         pendingTickets.forEach { pTicket ->
                                             onAddTicket(
                                                 pTicket.eventName, 
@@ -854,12 +860,13 @@ fun TicketListScreen(
                                                 "", 
                                                 pTicket.section, 
                                                 pTicket.row, 
-                                                pTicket.seat
+                                                pTicket.seat,
+                                                pTicket.pageIndex
                                             )
                                         }
                                     } else {
                                         // Guardar el boleto individual editado
-                                        onAddTicket(ticketName, uri, selectedCategory, eventDate, eventTime, location, section, row, seat)
+                                        onAddTicket(ticketName, uri, selectedCategory, eventDate, eventTime, location, section, row, seat, currentPageIndex)
                                     }
                                     showBottomSheet = false
                                 }
@@ -1155,7 +1162,7 @@ fun EmptyStateView(isSearch: Boolean) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PdfViewerScreen(uri: Uri, onBack: () -> Unit) {
+fun PdfViewerScreen(uri: Uri, pageIndex: Int, onBack: () -> Unit) {
     val context = LocalContext.current
     var pdfRenderer by remember { mutableStateOf<PdfRenderer?>(null) }
     var fileDescriptor by remember { mutableStateOf<android.os.ParcelFileDescriptor?>(null) }
@@ -1175,7 +1182,7 @@ fun PdfViewerScreen(uri: Uri, onBack: () -> Unit) {
             offset = androidx.compose.ui.geometry.Offset.Zero
         } else {
             val maxX = (screenWidthPx * scale - screenWidthPx) / 2f
-            val maxY = (screenHeightPx * scale - screenHeightPx) / 2f * pageCount.coerceAtLeast(1)
+            val maxY = (screenHeightPx * scale - screenHeightPx) / 2f
             val newX = (offset.x + offsetChange.x * scale).coerceIn(-maxX, maxX)
             val newY = (offset.y + offsetChange.y * scale).coerceIn(-maxY, maxY)
             offset = androidx.compose.ui.geometry.Offset(newX, newY)
@@ -1232,8 +1239,8 @@ fun PdfViewerScreen(uri: Uri, onBack: () -> Unit) {
                     ),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                items(pageCount) { index ->
-                    PdfPageImage(pdfRenderer = pdfRenderer!!, pageIndex = index, renderMutex = renderMutex)
+                item {
+                    PdfPageImage(pdfRenderer = pdfRenderer!!, pageIndex = pageIndex.coerceIn(0, pageCount - 1), renderMutex = renderMutex)
                     Spacer(modifier = Modifier.height(8.dp))
                 }
             }
@@ -1388,7 +1395,7 @@ suspend fun extractTicketData(context: Context, uri: Uri): List<ExtractedTicketD
                     
                     // Solo agregamos si detectamos algo de información (para evitar páginas en blanco)
                     if (eventName.isNotBlank() || section.isNotBlank() || seat.isNotBlank()) {
-                        extractedTickets.add(ExtractedTicketData(eventName, category, date, time, "", section, row, seat))
+                        extractedTickets.add(ExtractedTicketData(eventName, category, date, time, "", section, row, seat, pageIndex - 1))
                     }
                 }
                 document.close()
