@@ -142,14 +142,29 @@ fun TicketListScreen(
     var isVerifying by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var ticketToDelete by remember { mutableStateOf<TicketEntity?>(null) }
+    var pendingTickets by remember { mutableStateOf<List<ExtractedTicketData>>(emptyList()) }
+    var editingTicketIndex by remember { mutableStateOf<Int?>(null) }
+    var showIndividualDatePicker by remember { mutableStateOf<Int?>(null) }
+    var showIndividualTimePicker by remember { mutableStateOf<Int?>(null) }
 
     val categories = listOf("Concierto", "Cine", "Deportes", "Otro")
 
     val filteredTickets = remember(searchQuery, tickets) {
-        if (searchQuery.isEmpty()) {
+        val sdf = java.text.SimpleDateFormat("EEEE, dd 'DE' MMMM 'DE' yyyy", java.util.Locale("es", "ES"))
+        val list = if (searchQuery.isEmpty()) {
             tickets
         } else {
             tickets.filter { it.name.contains(searchQuery, ignoreCase = true) }
+        }
+        
+        list.sortedWith { t1, t2 ->
+            try {
+                val d1 = sdf.parse(t1.eventDate ?: "")
+                val d2 = sdf.parse(t2.eventDate ?: "")
+                d1?.compareTo(d2) ?: 0
+            } catch (e: Exception) {
+                0
+            }
         }
     }
 
@@ -170,16 +185,26 @@ fun TicketListScreen(
                 
                 // Validar si es un boleto real
                 if (isValidTicket(context, uri)) {
-                    // Extracción Inteligente
-                    val data = extractTicketData(context, uri)
-                    // Rellenar en tiempo real como sugerido
-                    ticketName = data.eventName
-                    selectedCategory = data.category
-                    eventDate = data.date
-                    eventTime = data.time
-                    section = data.section
-                    row = data.row
-                    seat = data.seat
+                    // Extracción Inteligente de Múltiples Boletos
+                    val dataList = extractTicketData(context, uri)
+                    pendingTickets = dataList
+                    
+                    if (dataList.isNotEmpty()) {
+                        // Si solo hay uno, rellenamos los campos individuales para edición
+                        if (dataList.size == 1) {
+                            val data = dataList[0]
+                            ticketName = data.eventName
+                            selectedCategory = data.category
+                            eventDate = data.date
+                            eventTime = data.time
+                            section = data.section
+                            row = data.row
+                            seat = data.seat
+                        } else {
+                            // Si hay varios, el nombre común del primer boleto se usa como referencia
+                            ticketName = dataList[0].eventName
+                        }
+                    }
                 } else {
                     Toast.makeText(context, "El archivo no parece ser un boleto válido", Toast.LENGTH_LONG).show()
                     selectedUri = null
@@ -205,6 +230,7 @@ fun TicketListScreen(
                     row = ""
                     seat = ""
                     selectedCategory = "Otro"
+                    pendingTickets = emptyList()
                     showBottomSheet = true 
                 },
                 containerColor = MaterialTheme.colorScheme.primary,
@@ -421,171 +447,385 @@ fun TicketListScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    Text("Categoría", style = MaterialTheme.typography.labelLarge)
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    // Category Selection Chips
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        categories.forEach { category ->
-                            val isSelected = selectedCategory == category
-                            Surface(
-                                onClick = { selectedCategory = category },
-                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                                shape = RoundedCornerShape(20.dp),
-                                modifier = Modifier.height(40.dp)
-                            ) {
-                                Box(modifier = Modifier.padding(horizontal = 16.dp), contentAlignment = Alignment.Center) {
-                                    Text(
-                                        category,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                    if (pendingTickets.size > 1) {
+                        // VISTA DE MÚLTIPLES BOLETOS DETECTADOS
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            "Se han detectado ${pendingTickets.size} boletos en este archivo",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            "Revisa la información extraída de cada página:",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            pendingTickets.forEachIndexed { index, pTicket ->
+                                val isEditing = editingTicketIndex == index
+                                Card(
+                                    onClick = { editingTicketIndex = if (isEditing) null else index },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = if (isEditing) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                    ),
+                                    shape = RoundedCornerShape(12.dp),
+                                    border = if (isEditing) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)) else null
+                                ) {
+                                    Column(modifier = Modifier.padding(12.dp)) {
+                                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                            Surface(
+                                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                                shape = androidx.compose.foundation.shape.CircleShape,
+                                                modifier = Modifier.size(32.dp)
+                                            ) {
+                                                Box(contentAlignment = Alignment.Center) {
+                                                    Text("${index + 1}", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
+                                                }
+                                            }
+                                            Spacer(modifier = Modifier.width(12.dp))
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(pTicket.eventName, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                                                if (!isEditing) {
+                                                    Text(
+                                                        "SEC ${pTicket.section} | FILA ${pTicket.row} | ASIENTO ${pTicket.seat}", 
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                                    )
+                                                }
+                                            }
+                                            Icon(
+                                                if (isEditing) Icons.Default.KeyboardArrowUp else Icons.Default.Edit,
+                                                contentDescription = null,
+                                                tint = if (isEditing) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                        
+                                        androidx.compose.animation.AnimatedVisibility(visible = isEditing) {
+                                            Column {
+                                                Spacer(modifier = Modifier.height(16.dp))
+                                                
+                                                CustomInputField(
+                                                    value = pTicket.eventName,
+                                                    onValueChange = { newVal ->
+                                                        val newList = pendingTickets.toMutableList()
+                                                        newList[index] = pTicket.copy(eventName = newVal)
+                                                        pendingTickets = newList
+                                                    },
+                                                    label = "Evento",
+                                                    placeholder = "Nombre del evento"
+                                                )
+                                                
+                                                Spacer(modifier = Modifier.height(12.dp))
+                                                
+                                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                    CustomInputField(
+                                                        value = pTicket.section,
+                                                        onValueChange = { newVal ->
+                                                            val newList = pendingTickets.toMutableList()
+                                                            newList[index] = pTicket.copy(section = newVal)
+                                                            pendingTickets = newList
+                                                        },
+                                                        label = "Sec",
+                                                        placeholder = "117",
+                                                        modifier = Modifier.weight(1f)
+                                                    )
+                                                    CustomInputField(
+                                                        value = pTicket.row,
+                                                        onValueChange = { newVal ->
+                                                            val newList = pendingTickets.toMutableList()
+                                                            newList[index] = pTicket.copy(row = newVal)
+                                                            pendingTickets = newList
+                                                        },
+                                                        label = "Fila",
+                                                        placeholder = "J",
+                                                        modifier = Modifier.weight(0.7f)
+                                                    )
+                                                    CustomInputField(
+                                                        value = pTicket.seat,
+                                                        onValueChange = { newVal ->
+                                                            val newList = pendingTickets.toMutableList()
+                                                            newList[index] = pTicket.copy(seat = newVal)
+                                                            pendingTickets = newList
+                                                        },
+                                                        label = "Asiento",
+                                                        placeholder = "10",
+                                                        modifier = Modifier.weight(0.7f)
+                                                    )
+                                                }
+                                                
+                                                Spacer(modifier = Modifier.height(12.dp))
+                                                
+                                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                    CustomInputField(
+                                                        value = pTicket.date,
+                                                        onValueChange = { },
+                                                        label = "Fecha",
+                                                        placeholder = "dd/mm/aaaa",
+                                                        modifier = Modifier.weight(1f),
+                                                        readOnly = true,
+                                                        onClick = { showIndividualDatePicker = index }
+                                                    )
+                                                    CustomInputField(
+                                                        value = pTicket.time,
+                                                        onValueChange = { },
+                                                        label = "Hora",
+                                                        placeholder = "--:--",
+                                                        modifier = Modifier.weight(0.6f),
+                                                        readOnly = true,
+                                                        onClick = { showIndividualTimePicker = index }
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    // Event Name
-                    CustomInputField(
-                        value = ticketName,
-                        onValueChange = { ticketName = it },
-                        label = "Nombre del evento *",
-                        placeholder = "Ej: Coldplay World Tour"
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Date and Time with Pickers
-                    var showDatePicker by remember { mutableStateOf(false) }
-                    var showTimePicker by remember { mutableStateOf(false) }
-                    
-                    if (showDatePicker) {
-                        val datePickerState = rememberDatePickerState()
-                        DatePickerDialog(
-                            onDismissRequest = { showDatePicker = false },
-                            confirmButton = {
-                                TextButton(onClick = {
-                                    datePickerState.selectedDateMillis?.let {
-                                        val sdf = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
-                                        eventDate = sdf.format(java.util.Date(it))
-                                    }
-                                    showDatePicker = false
-                                }) { Text("Aceptar", color = MaterialTheme.colorScheme.primary) }
-                            },
-                            dismissButton = {
-                                TextButton(onClick = { showDatePicker = false }) { Text("Cancelar", color = MaterialTheme.colorScheme.primary) }
-                            },
-                            colors = DatePickerDefaults.colors(
-                                containerColor = MaterialTheme.colorScheme.surface
-                            )
-                        ) {
-                            DatePicker(
-                                state = datePickerState,
-                                colors = DatePickerDefaults.colors(
-                                    containerColor = MaterialTheme.colorScheme.surface,
-                                    titleContentColor = MaterialTheme.colorScheme.onSurface,
-                                    headlineContentColor = MaterialTheme.colorScheme.onSurface,
-                                    selectedDayContainerColor = MaterialTheme.colorScheme.primary,
-                                    selectedDayContentColor = MaterialTheme.colorScheme.onPrimary,
-                                    todayContentColor = MaterialTheme.colorScheme.primary,
-                                    todayDateBorderColor = MaterialTheme.colorScheme.primary
-                                )
-                            )
-                        }
-                    }
-
-                    if (showTimePicker) {
-                        val timePickerState = rememberTimePickerState()
-                        AlertDialog(
-                            onDismissRequest = { showTimePicker = false },
-                            confirmButton = {
-                                TextButton(onClick = {
-                                    eventTime = String.format("%02d:%02d", timePickerState.hour, timePickerState.minute)
-                                    showTimePicker = false
-                                }) { Text("Aceptar", color = MaterialTheme.colorScheme.primary) }
-                            },
-                            dismissButton = {
-                                TextButton(onClick = { showTimePicker = false }) { Text("Cancelar", color = MaterialTheme.colorScheme.primary) }
-                            },
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            text = {
-                                TimePicker(
-                                    state = timePickerState,
-                                    colors = TimePickerDefaults.colors(
-                                        clockDialColor = MaterialTheme.colorScheme.surfaceVariant,
-                                        clockDialSelectedContentColor = MaterialTheme.colorScheme.onPrimary,
-                                        clockDialUnselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        selectorColor = MaterialTheme.colorScheme.primary,
-                                        periodSelectorBorderColor = MaterialTheme.colorScheme.primary,
-                                        periodSelectorSelectedContainerColor = MaterialTheme.colorScheme.primary,
-                                        periodSelectorUnselectedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                                        periodSelectorSelectedContentColor = MaterialTheme.colorScheme.onPrimary,
-                                        periodSelectorUnselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        timeSelectorSelectedContainerColor = MaterialTheme.colorScheme.primary,
-                                        timeSelectorUnselectedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                                        timeSelectorSelectedContentColor = MaterialTheme.colorScheme.onPrimary,
-                                        timeSelectorUnselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        // Date and Time Pickers por boleto individual
+                        if (showIndividualDatePicker != null) {
+                            val idx = showIndividualDatePicker!!
+                            val datePickerState = rememberDatePickerState()
+                            DatePickerDialog(
+                                onDismissRequest = { showIndividualDatePicker = null },
+                                confirmButton = {
+                                    TextButton(onClick = {
+                                        datePickerState.selectedDateMillis?.let {
+                                            val sdf = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
+                                            val newList = pendingTickets.toMutableList()
+                                            newList[idx] = pendingTickets[idx].copy(date = sdf.format(java.util.Date(it)))
+                                            pendingTickets = newList
+                                        }
+                                        showIndividualDatePicker = null
+                                    }) { Text("Aceptar", color = MaterialTheme.colorScheme.primary) }
+                                },
+                                dismissButton = {
+                                    TextButton(onClick = { showIndividualDatePicker = null }) { Text("Cancelar", color = MaterialTheme.colorScheme.primary) }
+                                },
+                                colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.surface)
+                            ) {
+                                DatePicker(
+                                    state = datePickerState,
+                                    colors = DatePickerDefaults.colors(
+                                        containerColor = MaterialTheme.colorScheme.surface,
+                                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                                        headlineContentColor = MaterialTheme.colorScheme.onSurface,
+                                        selectedDayContainerColor = MaterialTheme.colorScheme.primary,
+                                        selectedDayContentColor = MaterialTheme.colorScheme.onPrimary,
+                                        todayContentColor = MaterialTheme.colorScheme.primary,
+                                        todayDateBorderColor = MaterialTheme.colorScheme.primary
                                     )
                                 )
                             }
-                        )
-                    }
+                        }
 
-                    Row(modifier = Modifier.fillMaxWidth()) {
-                        CustomInputField(
-                            value = eventDate,
-                            onValueChange = { },
-                            label = "Fecha *",
-                            placeholder = "dd/mm/aa",
-                            modifier = Modifier.weight(1f),
-                            readOnly = true,
-                            onClick = { showDatePicker = true }
-                        )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        CustomInputField(
-                            value = eventTime,
-                            onValueChange = { },
-                            label = "Hora",
-                            placeholder = "--:--",
-                            modifier = Modifier.weight(1f),
-                            readOnly = true,
-                            onClick = { showTimePicker = true }
-                        )
-                    }
+                        if (showIndividualTimePicker != null) {
+                            val idx = showIndividualTimePicker!!
+                            val timePickerState = rememberTimePickerState()
+                            AlertDialog(
+                                onDismissRequest = { showIndividualTimePicker = null },
+                                confirmButton = {
+                                    TextButton(onClick = {
+                                        val timeStr = String.format("%02d:%02d", timePickerState.hour, timePickerState.minute)
+                                        val newList = pendingTickets.toMutableList()
+                                        newList[idx] = pendingTickets[idx].copy(time = timeStr)
+                                        pendingTickets = newList
+                                        showIndividualTimePicker = null
+                                    }) { Text("Aceptar", color = MaterialTheme.colorScheme.primary) }
+                                },
+                                dismissButton = {
+                                    TextButton(onClick = { showIndividualTimePicker = null }) { Text("Cancelar", color = MaterialTheme.colorScheme.primary) }
+                                },
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                text = {
+                                    TimePicker(
+                                        state = timePickerState,
+                                        colors = TimePickerDefaults.colors(
+                                            clockDialColor = MaterialTheme.colorScheme.surfaceVariant,
+                                            clockDialSelectedContentColor = MaterialTheme.colorScheme.onPrimary,
+                                            clockDialUnselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            selectorColor = MaterialTheme.colorScheme.primary,
+                                            periodSelectorBorderColor = MaterialTheme.colorScheme.primary,
+                                            periodSelectorSelectedContainerColor = MaterialTheme.colorScheme.primary,
+                                            periodSelectorUnselectedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                            periodSelectorSelectedContentColor = MaterialTheme.colorScheme.onPrimary,
+                                            periodSelectorUnselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            timeSelectorSelectedContainerColor = MaterialTheme.colorScheme.primary,
+                                            timeSelectorUnselectedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                            timeSelectorSelectedContentColor = MaterialTheme.colorScheme.onPrimary,
+                                            timeSelectorUnselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    )
+                                }
+                            )
+                        }
+                    } else {
+                        // VISTA DE EDICIÓN MANUAL (1 solo boleto)
+                        Text("Categoría", style = MaterialTheme.typography.labelLarge)
+                        Spacer(modifier = Modifier.height(12.dp))
+                        
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            categories.forEach { category ->
+                                val isSelected = selectedCategory == category
+                                Surface(
+                                    onClick = { selectedCategory = category },
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                    shape = RoundedCornerShape(20.dp),
+                                    modifier = Modifier.height(40.dp)
+                                ) {
+                                    Box(modifier = Modifier.padding(horizontal = 16.dp), contentAlignment = Alignment.Center) {
+                                        Text(
+                                            category,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                        }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(24.dp))
 
-                    // Section and Seat (New fields from extraction)
-                    Row(modifier = Modifier.fillMaxWidth()) {
                         CustomInputField(
-                            value = section,
-                            onValueChange = { section = it },
-                            label = "Sección",
-                            placeholder = "Sector",
-                            modifier = Modifier.weight(1f)
+                            value = ticketName,
+                            onValueChange = { ticketName = it },
+                            label = "Nombre del evento *",
+                            placeholder = "Ej: Coldplay World Tour"
                         )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        CustomInputField(
-                            value = row,
-                            onValueChange = { row = it },
-                            label = "Fila",
-                            placeholder = "J",
-                            modifier = Modifier.weight(0.5f)
-                        )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        CustomInputField(
-                            value = seat,
-                            onValueChange = { seat = it },
-                            label = "Asiento",
-                            placeholder = "10",
-                            modifier = Modifier.weight(0.5f)
-                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        var showDatePicker by remember { mutableStateOf(false) }
+                        var showTimePicker by remember { mutableStateOf(false) }
+                        
+                        if (showDatePicker) {
+                            val datePickerState = rememberDatePickerState()
+                            DatePickerDialog(
+                                onDismissRequest = { showDatePicker = false },
+                                confirmButton = {
+                                    TextButton(onClick = {
+                                        datePickerState.selectedDateMillis?.let {
+                                            val sdf = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
+                                            eventDate = sdf.format(java.util.Date(it))
+                                        }
+                                        showDatePicker = false
+                                    }) { Text("Aceptar", color = MaterialTheme.colorScheme.primary) }
+                                },
+                                dismissButton = {
+                                    TextButton(onClick = { showDatePicker = false }) { Text("Cancelar", color = MaterialTheme.colorScheme.primary) }
+                                },
+                                colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.surface)
+                            ) {
+                                DatePicker(
+                                    state = datePickerState,
+                                    colors = DatePickerDefaults.colors(
+                                        containerColor = MaterialTheme.colorScheme.surface,
+                                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                                        headlineContentColor = MaterialTheme.colorScheme.onSurface,
+                                        selectedDayContainerColor = MaterialTheme.colorScheme.primary,
+                                        selectedDayContentColor = MaterialTheme.colorScheme.onPrimary,
+                                        todayContentColor = MaterialTheme.colorScheme.primary,
+                                        todayDateBorderColor = MaterialTheme.colorScheme.primary
+                                    )
+                                )
+                            }
+                        }
+
+                        if (showTimePicker) {
+                            val timePickerState = rememberTimePickerState()
+                            AlertDialog(
+                                onDismissRequest = { showTimePicker = false },
+                                confirmButton = {
+                                    TextButton(onClick = {
+                                        eventTime = String.format("%02d:%02d", timePickerState.hour, timePickerState.minute)
+                                        showTimePicker = false
+                                    }) { Text("Aceptar", color = MaterialTheme.colorScheme.primary) }
+                                },
+                                dismissButton = {
+                                    TextButton(onClick = { showTimePicker = false }) { Text("Cancelar", color = MaterialTheme.colorScheme.primary) }
+                                },
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                text = {
+                                    TimePicker(
+                                        state = timePickerState,
+                                        colors = TimePickerDefaults.colors(
+                                            clockDialColor = MaterialTheme.colorScheme.surfaceVariant,
+                                            clockDialSelectedContentColor = MaterialTheme.colorScheme.onPrimary,
+                                            clockDialUnselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            selectorColor = MaterialTheme.colorScheme.primary,
+                                            periodSelectorBorderColor = MaterialTheme.colorScheme.primary,
+                                            periodSelectorSelectedContainerColor = MaterialTheme.colorScheme.primary,
+                                            periodSelectorUnselectedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                            periodSelectorSelectedContentColor = MaterialTheme.colorScheme.onPrimary,
+                                            periodSelectorUnselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            timeSelectorSelectedContainerColor = MaterialTheme.colorScheme.primary,
+                                            timeSelectorUnselectedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                            timeSelectorSelectedContentColor = MaterialTheme.colorScheme.onPrimary,
+                                            timeSelectorUnselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    )
+                                }
+                            )
+                        }
+
+                        Row(modifier = Modifier.fillMaxWidth()) {
+                            CustomInputField(
+                                value = eventDate,
+                                onValueChange = { },
+                                label = "Fecha *",
+                                placeholder = "dd/mm/aa",
+                                modifier = Modifier.weight(1f),
+                                readOnly = true,
+                                onClick = { showDatePicker = true }
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            CustomInputField(
+                                value = eventTime,
+                                onValueChange = { },
+                                label = "Hora",
+                                placeholder = "--:--",
+                                modifier = Modifier.weight(1f),
+                                readOnly = true,
+                                onClick = { showTimePicker = true }
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Row(modifier = Modifier.fillMaxWidth()) {
+                            CustomInputField(
+                                value = section,
+                                onValueChange = { section = it },
+                                label = "Sección",
+                                placeholder = "Sector",
+                                modifier = Modifier.weight(1f)
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            CustomInputField(
+                                value = row,
+                                onValueChange = { row = it },
+                                label = "Fila",
+                                placeholder = "J",
+                                modifier = Modifier.weight(0.5f)
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            CustomInputField(
+                                value = seat,
+                                onValueChange = { seat = it },
+                                label = "Asiento",
+                                placeholder = "10",
+                                modifier = Modifier.weight(0.5f)
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(32.dp))
@@ -602,12 +842,30 @@ fun TicketListScreen(
                                     } catch (e: Exception) {
                                         e.printStackTrace()
                                     }
-                                    onAddTicket(ticketName, uri, selectedCategory, eventDate, eventTime, location, section, row, seat)
+                                    if (pendingTickets.size > 1) {
+                                        // Guardar todos los boletos detectados
+                                        pendingTickets.forEach { pTicket ->
+                                            onAddTicket(
+                                                pTicket.eventName, 
+                                                uri, 
+                                                pTicket.category, 
+                                                pTicket.date, 
+                                                pTicket.time, 
+                                                "", 
+                                                pTicket.section, 
+                                                pTicket.row, 
+                                                pTicket.seat
+                                            )
+                                        }
+                                    } else {
+                                        // Guardar el boleto individual editado
+                                        onAddTicket(ticketName, uri, selectedCategory, eventDate, eventTime, location, section, row, seat)
+                                    }
                                     showBottomSheet = false
                                 }
                             }
                         },
-                        enabled = ticketName.isNotBlank() && selectedUri != null && !isVerifying,
+                        enabled = (ticketName.isNotBlank() || pendingTickets.isNotEmpty()) && selectedUri != null && !isVerifying,
                         modifier = Modifier.fillMaxWidth().height(56.dp),
                         shape = RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(
@@ -618,7 +876,8 @@ fun TicketListScreen(
                         if (isVerifying) {
                             CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
                         } else {
-                            Text("Guardar Boleto", style = MaterialTheme.typography.titleMedium)
+                            val buttonText = if (pendingTickets.size > 1) "Guardar ${pendingTickets.size} Boletos" else "Guardar Boleto"
+                            Text(buttonText, style = MaterialTheme.typography.titleMedium)
                         }
                     }
                 }
@@ -1065,70 +1324,81 @@ suspend fun isValidTicket(context: Context, uri: Uri): Boolean {
     }
 }
 
-suspend fun extractTicketData(context: Context, uri: Uri): ExtractedTicketData {
+suspend fun extractTicketData(context: Context, uri: Uri): List<ExtractedTicketData> {
     return withContext(Dispatchers.IO) {
-        var eventName = ""
-        var category = "Otro"
-        var date = ""
-        var time = ""
-        var section = ""
-        var row = ""
-        var seat = ""
+        val extractedTickets = mutableListOf<ExtractedTicketData>()
         
         try {
             val inputStream = context.contentResolver.openInputStream(uri)
             if (inputStream != null) {
                 val document = PDDocument.load(inputStream)
+                val totalPages = document.numberOfPages
                 val stripper = PDFTextStripper()
-                stripper.startPage = 1
-                stripper.endPage = 1
-                val text = stripper.getText(document)
+                
+                for (pageIndex in 1..totalPages) {
+                    stripper.startPage = pageIndex
+                    stripper.endPage = pageIndex
+                    val text = stripper.getText(document)
+                    
+                    var eventName = ""
+                    var category = "Otro"
+                    var date = ""
+                    var time = ""
+                    var section = ""
+                    var row = ""
+                    var seat = ""
+                    
+                    val lines = text.split("\n").map { it.trim() }
+                    
+                    // Lógica de Nombre de Evento (Buscando "VS")
+                    val vsLine = lines.find { it.contains(" VS ", ignoreCase = true) }
+                    if (vsLine != null) {
+                        eventName = vsLine
+                            .substringBefore(" SERIE") 
+                            .trim()
+                            .uppercase()
+                        category = "Deportes"
+                    }
+
+                    // Lógica de Fecha
+                    val datePattern = Regex("(?i)(lunes|martes|miércoles|jueves|viernes|sábado|domingo),\\s+\\d+\\s+DE\\s+[A-Z]+\\s+DE\\s+\\d{4}")
+                    val dateMatch = datePattern.find(text)
+                    if (dateMatch != null) {
+                        date = dateMatch.value
+                    }
+
+                    // Lógica de Sección
+                    if (text.contains("SECCION", ignoreCase = true)) {
+                        val sectionMatch = Regex("(?i)SECCION\\s+([A-Z0-9 ]+)").find(text)
+                        section = sectionMatch?.groupValues?.get(1)?.trim() ?: ""
+                    }
+                    
+                    // Lógica de Fila y Asiento
+                    val rowSeatPattern = Regex("(?i)FILA\\s*\\|?\\s*BUTACA\\s*\\n\\s*([A-Z0-9]+)\\s+([A-Z0-9]+)")
+                    val rowSeatMatch = rowSeatPattern.find(text)
+                    if (rowSeatMatch != null) {
+                        row = rowSeatMatch.groupValues[1]
+                        seat = rowSeatMatch.groupValues[2]
+                    }
+
+                    // Si no se encontró nombre con VS, usar el título del PDF
+                    if (eventName.isBlank()) {
+                        eventName = getPdfTitle(context, uri).uppercase()
+                    }
+                    
+                    // Solo agregamos si detectamos algo de información (para evitar páginas en blanco)
+                    if (eventName.isNotBlank() || section.isNotBlank() || seat.isNotBlank()) {
+                        extractedTickets.add(ExtractedTicketData(eventName, category, date, time, "", section, row, seat))
+                    }
+                }
                 document.close()
                 inputStream.close()
-                
-                val lines = text.split("\n").map { it.trim() }
-                
-                // Lógica de Nombre de Evento (Buscando "VS" como en los archivos de muestra)
-                val vsLine = lines.find { it.contains(" VS ", ignoreCase = true) }
-                if (vsLine != null) {
-                    eventName = vsLine
-                        .substringBefore(" SERIE") // Limpiar para Bravos vs Leones
-                        .trim()
-                        .uppercase()
-                    category = "Deportes"
-                }
-
-                // Lógica de Fecha (Patrón estandarizado en boletos de muestra)
-                val datePattern = Regex("(?i)(lunes|martes|miércoles|jueves|viernes|sábado|domingo),\\s+\\d+\\s+DE\\s+[A-Z]+\\s+DE\\s+\\d{4}")
-                val dateMatch = datePattern.find(text)
-                if (dateMatch != null) {
-                    date = dateMatch.value
-                }
-
-                // Lógica de Sección
-                if (text.contains("SECCION", ignoreCase = true)) {
-                    val sectionMatch = Regex("(?i)SECCION\\s+([A-Z0-9 ]+)").find(text)
-                    section = sectionMatch?.groupValues?.get(1)?.trim() ?: ""
-                }
-                
-                // Lógica de Fila y Asiento
-                val rowSeatPattern = Regex("(?i)FILA\\s*\\|?\\s*BUTACA\\s*\\n\\s*([A-Z0-9]+)\\s+([A-Z0-9]+)")
-                val rowSeatMatch = rowSeatPattern.find(text)
-                if (rowSeatMatch != null) {
-                    row = rowSeatMatch.groupValues[1]
-                    seat = rowSeatMatch.groupValues[2]
-                }
             }
         } catch (e: Exception) {
             e.printStackTrace()
         }
         
-        // Si no se encontró nombre con VS, usar el título del PDF
-        if (eventName.isBlank()) {
-            eventName = getPdfTitle(context, uri).uppercase()
-        }
-        
-        ExtractedTicketData(eventName, category, date, time, "", section, row, seat)
+        extractedTickets
     }
 }
 
