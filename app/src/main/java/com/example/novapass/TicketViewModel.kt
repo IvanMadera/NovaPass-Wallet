@@ -22,12 +22,29 @@ class TicketViewModel(application: Application) : AndroidViewModel(application) 
             initialValue = emptyList()
         )
 
-    fun addTicket(name: String, uri: Uri) {
+    fun addTicket(
+        name: String,
+        uri: Uri,
+        category: String = "Otro",
+        eventDate: String? = null,
+        eventTime: String? = null,
+        location: String? = null,
+        section: String? = null,
+        row: String? = null,
+        seat: String? = null
+    ) {
         viewModelScope.launch {
             val newTicket = TicketEntity(
                 id = UUID.randomUUID().toString(),
                 name = name,
-                uri = uri.toString()
+                uri = uri.toString(),
+                category = category,
+                eventDate = eventDate,
+                eventTime = eventTime,
+                location = location,
+                section = section,
+                row = row,
+                seat = seat
             )
             ticketDao.insertTicket(newTicket)
         }
