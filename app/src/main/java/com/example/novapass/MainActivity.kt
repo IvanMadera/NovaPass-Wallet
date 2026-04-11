@@ -417,7 +417,7 @@ fun TicketListScreen(
                                 drawRect(
                                     brush = Brush.verticalGradient(
                                         colors = listOf(Color.Black, Color.Transparent),
-                                        endY = 56.dp.toPx()
+                                        endY = 28.dp.toPx()
                                     ),
                                     blendMode = BlendMode.DstOut
                                 )
@@ -1128,10 +1128,12 @@ fun TicketItem(ticket: TicketEntity, onClick: () -> Unit, onDelete: () -> Unit) 
                     Text(
                         ticket.eventDate ?: "Fecha TBD",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(alpha = 0.7f)
+                        color = Color.White.copy(alpha = 0.7f),
+                        maxLines = 1,
+                        modifier = Modifier.weight(1f)
                     )
                     
-                    Spacer(modifier = Modifier.width(16.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     
                     Icon(Icons.Default.AccessTime, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(8.dp))
