@@ -1,39 +1,41 @@
-# 🎫 NovaPass
+# 🎫 NovaPass: Quantum Sapphire Edition
 
-**NovaPass** es una aplicación nativa para Android desarrollada completamente en **Kotlin** y **Jetpack Compose** que funciona como una "billetera" (Wallet) personal enfocada en organizar tus **boletos, tickets y pases en formato PDF**.
+**NovaPass** es una billetera digital (Wallet) nativa para Android, desarrollada con un enfoque en **diseño premium y alto rendimiento**. Permite organizar tus **boletos, pases y tickets en formato PDF** bajo un sistema de diseño de vanguardia.
 
-El objetivo de la app es que no tengas que escarbar entre tus descargas o correos electrónicos al momento de asistir a un evento. Puedes simplemente importar el boleto a la aplicación y quedará guardado y asegurado para cuando más lo necesites.
+El objetivo de la app es eliminar la fricción al asistir a eventos, ofreciendo un acceso inmediato, estético y seguro a tus pases, centralizados en un entorno visualmente impactante.
 
 ## ✨ Características Principales
 
-- **📱 Diseño 100% Jetpack Compose**: Toda la interfaz está construida con el entorno declarativo más moderno de Android (Material 3).
-- **📂 Importación Rápida de Archivos**: Agrega tus PDFs directamente desde el almacenamiento central de tu teléfono de manera sencilla. Utiliza Storage Access Framework (`OpenDocument`) para persistir tus accesos a los archivos.
-- **📄 Visor PDF Ultra-Rápido (Nativo)**: Renderizado de páginas PDF usando directamente `android.graphics.pdf.PdfRenderer` en conjunto con el ciclo de vida de corrutinas en Android; eliminando dependencias infladas, librerías *alpha* inestables o *memory leaks*.
-- **🔍 Zoom Nativo (Pinch-to-zoom)**: Visualiza las letras chiquitas de tu boleto o acerca los Códigos QR usando dos dedos para hacer Zoom sin perder calidad.
-- **💾 Almacenamiento Local (Room Database)**: La aplicación utiliza el ORM oficial básico de Android (`Room`) para almacenar el historial de manera persistente, enlazando las URI de los boletos. Todos tus boletos vivirán en un solo lugar y responderán a Flow `StateFlow` para reactividad inmediata en la UI.
-- **🗑️ Eliminación Fácil**: Borra cualquier pase expirado con tan solo un botón.
+- **💎 Diseño Quantum Sapphire (Glassmorphism)**: Una interfaz moderna basada en profundidad, transparencias y resplandores radiales ambientales que crean una experiencia inmersiva.
+- **🫧 Componentes de Cristal**: Los tickets y buscadores utilizan efectos de "vidrio" con bordes de precisión e insets de 0.5dp para evitar artefactos de renderizado.
+- **🎟️ Sistema de Perforación Real**: Los tickets cuentan con muescas laterales logradas mediante técnicas de composición offscreen (`BlendMode.Clear`), permitiendo que el fondo sea visible a través del boleto.
+- **🔆 Sombra de Resplandor Manual (Anti-Artifact)**: Solución personalizada de dibujo en `Canvas` para el botón de acción, evitando los errores de hardware (octágonos) y garantizando una sombra circular perfecta con aura dorada.
+- **📄 Visor PDF de Alta Fidelidad**: Renderizado nativo usando `android.graphics.pdf.PdfRenderer` con soporte para **Pinch-to-zoom**, ideal para escanear QRs y leer detalles pequeños.
+- **💾 Persistencia con Room**: Almacenamiento local seguro de metadatos y enlaces a archivos, con reactividad inmediata mediante `StateFlow`.
+- **📂 Gestión Inteligente de Archivos**: Uso de *Storage Access Framework* para importar PDFs sin duplicar archivos innecesariamente en el sistema.
 
 ## 🛠️ Tecnologías y Arquitectura
 
-El proyecto está diseñado bajo un patrón arquitectónico **MVVM (Model-View-ViewModel)**.
+NovaPass está construida sobre una arquitectura robusta **MVVM (Model-View-ViewModel)**.
 
-- **Frontend**: Jetpack Compose (Material 3), Navigation Compose
-- **Lenguaje**: Kotlin
-- **Base de Datos Local**: Room (AndroidX)
-- **Procesamiento de Archivos**: ParcelFileDescriptor, UI Graphics Bitmap y persistencia de URIs
-- **Lógica asíncrona**: Kotlin Coroutines + `Mutex` (para concurrencia y seguridad de entrada-salida sobre IO / `PdfRenderer`).
+- **Frontend**: Jetpack Compose (Material 3), Navigation Compose, UI Graphics Avanzado.
+- **Backend Local**: Room Persistence Library.
+- **Lógica de Dibujo**: `DrawScope`, Composición Offscreen, `PathEffect` para líneas punteadas dinámicas.
+- **Lenguaje**: Kotlin + Coroutines para procesamiento asíncrono y seguro de PDFs.
+- **Tokens de Diseño**: Sistema centralizado de colores en `Color.kt` (Deep Navy, Premium Gold, Emerald Tint).
 
-## 🚀 Requisitos
+## 🚀 Requisitos Técnicos
 
 - **Min SDK**: 31 (Android 12+)
 - **Target SDK**: 35 (Android 15)
+- **Soporte**: Optimizado para pantallas OLED con negros profundos y altos contrastes.
 
-## 📦 Instalación
+## 📦 Instalación y Uso
 
-1. Clona el repositorio a través de tu entorno local.
-2. Abre el proyecto en **Android Studio**.
-3. Deja que `Gradle` sincronice el proyecto y descargue las dependencias (Principalmente `androidx.compose` y `androidx.room`).
-4. Haz clic en **Run** (`Shift + F10`) con un Emulador corriendo Android 12 o superior, o conéctalo a tu dispositivo físico.
+1.  Clona el repositorio.
+2.  Abre el proyecto en **Android Studio (Ladybug o superior)**.
+3.  Sincroniza `Gradle` para obtener las dependencias oficiales de AndroidX.
+4.  Ejecuta la aplicación en un dispositivo físico para apreciar los efectos de profundidad y resplandor.
 
 ---
-*Si deseas implementar más extensiones, considera agregar una vista en miniatura de la primera página del pdf para el listado Room, ¡la lógica ya está en progreso dentro del `TicketEntity`!*
+*NovaPass es un ejemplo de cómo la potencia de Jetpack Compose puede elevar una herramienta funcional a una pieza de diseño de software premium.*

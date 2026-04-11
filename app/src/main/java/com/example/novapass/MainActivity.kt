@@ -36,8 +36,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.novapass.data.TicketEntity
-import com.example.novapass.ui.theme.NovaPassTheme
-import com.example.novapass.ui.theme.NovaInputBackground
+import com.example.novapass.ui.theme.*
 import android.content.Intent
 import android.content.Context
 import androidx.compose.foundation.border
@@ -45,10 +44,14 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
@@ -231,27 +234,51 @@ fun TicketListScreen(
 
     Scaffold(
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { 
-                    // Resetear estados al abrir
-                    selectedUri = null
-                    selectedFileName = ""
-                    ticketName = ""
-                    eventDate = ""
-                    eventTime = ""
-                    location = ""
-                    section = ""
-                    row = ""
-                    seat = ""
-                    selectedCategory = "Otro"
-                    pendingTickets = emptyList()
-                    showBottomSheet = true 
-                },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                shape = androidx.compose.foundation.shape.CircleShape
+            // FAB PERSONALIZADO CON SOMBRA MANUAL (EVITA EL OCTÁGONO)
+            Box(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .size(60.dp)
+                    .drawBehind {
+                        // Resplandor dorado manual (sustituye a la sombra nativa rústica)
+                        drawCircle(
+                            brush = Brush.radialGradient(
+                                colors = listOf(Color(0xFFE9C46A).copy(alpha = 0.25f), Color.Transparent),
+                                center = center,
+                                radius = size.width * 0.7f
+                            ),
+                            radius = size.width * 0.7f,
+                            center = center
+                        )
+                    }
+                    .background(
+                        Brush.linearGradient(
+                            colors = listOf(Color(0xFFE9C46A), Color(0xFFD4AF37))
+                        ),
+                        shape = CircleShape
+                    )
+                    .clickable {
+                        selectedUri = null
+                        selectedFileName = ""
+                        ticketName = ""
+                        eventDate = ""
+                        eventTime = ""
+                        location = ""
+                        section = ""
+                        row = ""
+                        seat = ""
+                        selectedCategory = "Otro"
+                        pendingTickets = emptyList()
+                        showBottomSheet = true
+                    },
+                contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Ticket")
+                Icon(
+                    Icons.Default.Add, 
+                    contentDescription = "Add", 
+                    modifier = Modifier.size(30.dp),
+                    tint = NovaOnPrimary
+                )
             }
         },
         containerColor = Color.Transparent  // Transparente para que los blobs se vean en toda la pantalla
@@ -262,24 +289,24 @@ fun TicketListScreen(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background) // Fondo base
         ) {
-            Canvas(modifier = Modifier.fillMaxSize().blur(60.dp)) {
-                // Blob 1: Dorado cálido arriba-derecha (tarjeta dorada del logo)
+            Canvas(modifier = Modifier.fillMaxSize().blur(80.dp)) {
+                // Glow 1: Ambient Green (top-left) - Design Rule
                 drawCircle(
-                    color = androidx.compose.ui.graphics.Color(0xFFC09A3C).copy(alpha = 0.22f),
-                    radius = size.width * 0.45f,
-                    center = androidx.compose.ui.geometry.Offset(size.width * 0.85f, size.height * 0.12f)
+                    color = NovaGlowGreen.copy(alpha = 0.12f),
+                    radius = size.width * 0.6f,
+                    center = androidx.compose.ui.geometry.Offset(size.width * 0.05f, size.height * 0.05f)
                 )
-                // Blob 2: Verde bosque abajo-izquierda (tarjeta verde del logo)
+                // Glow 2: Ambient Gold (top-right) - Design Rule
                 drawCircle(
-                    color = androidx.compose.ui.graphics.Color(0xFF2D4A3E).copy(alpha = 0.30f),
-                    radius = size.width * 0.55f,
-                    center = androidx.compose.ui.geometry.Offset(size.width * 0.15f, size.height * 0.65f)
+                    color = NovaGlowGold.copy(alpha = 0.10f),
+                    radius = size.width * 0.6f,
+                    center = androidx.compose.ui.geometry.Offset(size.width * 0.95f, size.height * 0.08f)
                 )
-                // Blob 3: Teal apagado centro-derecha (fondo del logo)
+                // Glow 3: Background Depth (bottom-center)
                 drawCircle(
-                    color = androidx.compose.ui.graphics.Color(0xFF4D7A73).copy(alpha = 0.16f),
-                    radius = size.width * 0.3f,
-                    center = androidx.compose.ui.geometry.Offset(size.width * 0.75f, size.height * 0.45f)
+                    color = NovaGlowBlue.copy(alpha = 0.15f),
+                    radius = size.width * 0.5f,
+                    center = androidx.compose.ui.geometry.Offset(size.width * 0.5f, size.height * 0.6f)
                 )
             }
 
@@ -381,24 +408,51 @@ fun TicketListScreen(
                 )
             }
 
-            // SEARCH BAR
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
+            // SEARCH BAR (GLASS STYLE - NO BLUR ON CONTENT)
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                placeholder = { Text("Buscar boletos...", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)) },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                    focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                    unfocusedBorderColor = androidx.compose.ui.graphics.Color.Transparent
-                ),
-                singleLine = true
-            )
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Color.White.copy(alpha = 0.08f)) // Slightly more opaque glass
+                    .border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(20.dp))
+            ) {
+                // Inner highlight overlay (top reflection)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(
+                            Brush.horizontalGradient(
+                                colors = listOf(Color.Transparent, Color.White.copy(alpha = 0.15f), Color.Transparent)
+                            )
+                        )
+                        .align(Alignment.TopCenter)
+                )
+                
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { 
+                        Text(
+                            "Buscar boletos...", 
+                            color = MaterialTheme.colorScheme.onSurface, 
+                            style = MaterialTheme.typography.bodyLarge 
+                        ) 
+                    },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                    shape = RoundedCornerShape(20.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedBorderColor = Color.Transparent,
+                        unfocusedBorderColor = Color.Transparent,
+                        cursorColor = MaterialTheme.colorScheme.primary
+                    ),
+                    singleLine = true
+                )
+            }
 
 
             // LIST OR EMPTY STATE — sin Spacer para no crear una línea de corte
@@ -1004,49 +1058,63 @@ fun TicketItem(ticket: TicketEntity, onClick: () -> Unit, onDelete: () -> Unit) 
         else -> Icons.Default.ConfirmationNumber
     }
 
-    // Body: Charcoal oscuro del logo (cuerpo del wallet)
-    val bodyBackgroundColor = Color(0xFF141620)
-    // Header: Plateado — blanco desaturado semi-transparente sobre el fondo negro
-    val headerGlassColor = Color(0xFFCDD5E0).copy(alpha = 0.13f)
+    // Body del ticket: superficie de cristal más visible (alpha incrementado para contraste)
+    val bodyBackgroundColor = Color.White.copy(alpha = 0.10f)
+    // Color de borde cristal (design system: glass border rgba(255,255,255,0.12))
+    val glassBorderColor = Color.White.copy(alpha = 0.12f)
 
-    // Box con offscreen para que BlendMode.Clear funcione correctamente
+    // Box con offscreen + border de cristal dibujado antes del contenido
+    // El BlendMode.Clear de las muñecas borrará también el borde — dando notches naturales
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
+            .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen } // Layer para BlendMode.Clear
+            .drawWithContent {
+                // Inset de 0.5dp para evitar que el clip corte el borde y genere una "sombra" extraña
+                val strokeW = 1.dp.toPx()
+                drawRoundRect(
+                    color = Color.White.copy(alpha = 0.12f),
+                    topLeft = Offset(strokeW / 2, strokeW / 2),
+                    size = Size(size.width - strokeW, size.height - strokeW),
+                    cornerRadius = CornerRadius(16.dp.toPx()),
+                    style = Stroke(width = strokeW)
+                )
+                drawContent()
+            }
             .clip(RoundedCornerShape(16.dp))
             .clickable { onClick() }
-            .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            // Header: Glassmorphism Plateado
+            // Header: Green-tinted glass (design system: tinted green glow + light reflection)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(
                         Brush.verticalGradient(
                             colors = listOf(
-                                Color.White.copy(alpha = 0.16f), // Toque de plata arriba
-                                Color.White.copy(alpha = 0.08f)  // Se suaviza abajo
+                                Color(0xFF2DCA8C).copy(alpha = 0.05f), // Más ligero arriba para evitar "sombra"
+                                Color(0xFF2DCA8C).copy(alpha = 0.18f)  // Más intenso hacia el divisor
                             )
                         )
                     )
                     .padding(16.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Surface(
-                        color = Color.White.copy(alpha = 0.05f),
-                        shape = CircleShape,
-                        modifier = Modifier.size(36.dp)
+                    // Icon circle: glass con border dorado (design system: circular glass container + accent border)
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(Color.White.copy(alpha = 0.07f), CircleShape)
+                            .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.50f), CircleShape),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                categoryIcon,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
+                        Icon(
+                            categoryIcon,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
                     }
                     
                     Spacer(modifier = Modifier.width(12.dp))
@@ -1079,9 +1147,9 @@ fun TicketItem(ticket: TicketEntity, onClick: () -> Unit, onDelete: () -> Unit) 
                 val halfH = size.height / 2f
                 val notchR = 13.dp.toPx()
 
-                // Fondo superior de la perforación (efecto glass plateado)
+                // Fondo superior de la perforación (Coincide exactamente con el final del header)
                 drawRect(
-                    color = Color.White.copy(alpha = 0.12f),
+                    color = Color(0xFF2DCA8C).copy(alpha = 0.18f),
                     size = Size(size.width, halfH)
                 )
                 // Fondo inferior de la perforación (navy body)
@@ -1125,10 +1193,11 @@ fun TicketItem(ticket: TicketEntity, onClick: () -> Unit, onDelete: () -> Unit) 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Event, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(8.dp))
+                // Fecha: secundary text (design system: metadata color)
                     Text(
                         ticket.eventDate ?: "Fecha TBD",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(alpha = 0.7f),
+                        color = MaterialTheme.colorScheme.onSurface, // #8B9BB4
                         maxLines = 1,
                         modifier = Modifier.weight(1f)
                     )
@@ -1136,7 +1205,7 @@ fun TicketItem(ticket: TicketEntity, onClick: () -> Unit, onDelete: () -> Unit) 
                     Spacer(modifier = Modifier.width(8.dp))
                     
                     Icon(Icons.Default.AccessTime, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
                     
                     val formattedTime = remember(ticket.eventTime) {
                         try {
@@ -1152,10 +1221,13 @@ fun TicketItem(ticket: TicketEntity, onClick: () -> Unit, onDelete: () -> Unit) 
                         }
                     }
                     
+                    // Hora: accent gold + bold — visually dominant (design system: time hierarchy)
                     Text(
                         formattedTime,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(alpha = 0.7f)
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary // Gold #E9C46A
+                        )
                     )
                 }
                 
@@ -1175,8 +1247,8 @@ fun TicketItem(ticket: TicketEntity, onClick: () -> Unit, onDelete: () -> Unit) 
                     
                     Text(
                         locationText.uppercase(),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(alpha = 0.8f),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface, // Secondary text #8B9BB4
                         maxLines = 1
                     )
                 }

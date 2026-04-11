@@ -2,15 +2,28 @@ package com.example.novapass.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Paleta "NovaPass Wallet" — Extraída del logo (Dorado + Verde Bosque + Charcoal)
-val NovaPrimary = Color(0xFFC09A3C)       // Dorado Cálido (tarjeta dorada del logo)
-val NovaBackground = Color(0xFF0C0D0A)    // Negro cálido-oscuro (base del wallet)
-val NovaSurface = Color(0xFF1A1D2B)       // Charcoal (cuerpo del ticket, wallet body)
+// ============================================================
+// NovaPass Premium Design System — Color Tokens
+// ============================================
 
-// Tipografía y Jerarquía
-val NovaOnPrimary = Color(0xFF000000)     // Texto sobre dorado
-val NovaOnBackground = Color(0xFFFFFFFF)  // Texto sobre fondo
-val NovaOnSurface = Color(0xFFEEEEEE)     // Texto sobre superficie
-val NovaSurfaceVariant = Color(0xFF252830)// Charcoal medio (variante)
-val NovaInputBackground = Color(0xFF12141E)// Fondo de inputs
-val NovaError = Color(0xFFCF6679)
+// -- Primary Background --
+val NovaBackground = Color(0xFF0B1220)      // Deep ambient navy
+
+// -- Accents --
+val NovaPrimary = Color(0xFFE9C46A)         // Premium Gold Accent
+val NovaOnPrimary = Color(0xFF0B1220)       // Dark text on gold
+
+// -- Typography Hierarchy --
+val NovaOnBackground = Color(0xFFE6EDF3)    // Primary Text (High visibility)
+val NovaOnSurface = Color(0xFF8B9BB4)       // Secondary Text (Metadata/De-emphasized)
+
+// -- Functional Colors --
+val NovaSurface = Color(0xFF131A2E)         // Surface for modals/sheets
+val NovaSurfaceVariant = Color(0xFF1E2A40)  // Slightly lighter surface variant
+val NovaInputBackground = Color(0xFF0E1628) // Inside search bar
+val NovaError = Color(0xFFCF6679)           // Error state
+
+// -- Glow/Ambient Colors --
+val NovaGlowGreen = Color(0xFF2DCA8C)       // Top-left radial glow
+val NovaGlowGold = Color(0xFFE9C46A)        // Top-right radial glow
+val NovaGlowBlue = Color(0xFF1D3A5F)        // Background depth glow
