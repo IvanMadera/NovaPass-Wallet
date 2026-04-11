@@ -40,8 +40,15 @@ import com.example.novapass.ui.theme.NovaPassTheme
 import com.example.novapass.ui.theme.NovaInputBackground
 import android.content.Intent
 import android.content.Context
+import androidx.compose.foundation.border
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
@@ -247,13 +254,40 @@ fun TicketListScreen(
                 Icon(Icons.Default.Add, contentDescription = "Add Ticket")
             }
         },
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = Color.Transparent  // Transparente para que los blobs se vean en toda la pantalla
     ) { innerPadding ->
-        Column(
+        // Box global con blobs para cubrir TODA la pantalla (header + search + tickets)
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
+                .background(MaterialTheme.colorScheme.background) // Fondo base
         ) {
+            Canvas(modifier = Modifier.fillMaxSize().blur(60.dp)) {
+                // Blob 1: Dorado cálido arriba-derecha (tarjeta dorada del logo)
+                drawCircle(
+                    color = androidx.compose.ui.graphics.Color(0xFFC09A3C).copy(alpha = 0.22f),
+                    radius = size.width * 0.45f,
+                    center = androidx.compose.ui.geometry.Offset(size.width * 0.85f, size.height * 0.12f)
+                )
+                // Blob 2: Verde bosque abajo-izquierda (tarjeta verde del logo)
+                drawCircle(
+                    color = androidx.compose.ui.graphics.Color(0xFF2D4A3E).copy(alpha = 0.30f),
+                    radius = size.width * 0.55f,
+                    center = androidx.compose.ui.geometry.Offset(size.width * 0.15f, size.height * 0.65f)
+                )
+                // Blob 3: Teal apagado centro-derecha (fondo del logo)
+                drawCircle(
+                    color = androidx.compose.ui.graphics.Color(0xFF4D7A73).copy(alpha = 0.16f),
+                    radius = size.width * 0.3f,
+                    center = androidx.compose.ui.geometry.Offset(size.width * 0.75f, size.height * 0.45f)
+                )
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+            ) {
             // BRAND HEADER
             Row(
                 modifier = Modifier
@@ -366,26 +400,42 @@ fun TicketListScreen(
                 singleLine = true
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
 
-            // LIST OR EMPTY STATE
-            if (filteredTickets.isEmpty()) {
-                EmptyStateView(isSearch = searchQuery.isNotEmpty())
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 80.dp)
-                ) {
-                    items(filteredTickets) { ticket ->
-                        TicketItem(
-                            ticket = ticket,
-                            onClick = { onTicketClick(ticket) },
-                            onDelete = { ticketToDelete = ticket }
-                        )
+            // LIST OR EMPTY STATE — sin Spacer para no crear una línea de corte
+            Box(modifier = Modifier.fillMaxSize()) {
+                if (filteredTickets.isEmpty()) {
+                    EmptyStateView(isSearch = searchQuery.isNotEmpty())
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            // Fading edge con DstOut: borra el contenido de la lista en la parte
+                            // superior revelando el fondo (blobs) que hay detras — sin usar color
+                            .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+                            .drawWithContent {
+                                drawContent()
+                                drawRect(
+                                    brush = Brush.verticalGradient(
+                                        colors = listOf(Color.Black, Color.Transparent),
+                                        endY = 56.dp.toPx()
+                                    ),
+                                    blendMode = BlendMode.DstOut
+                                )
+                            },
+                        contentPadding = PaddingValues(top = 12.dp, bottom = 80.dp)
+                    ) {
+                        items(filteredTickets) { ticket ->
+                            TicketItem(
+                                ticket = ticket,
+                                onClick = { onTicketClick(ticket) },
+                                onDelete = { ticketToDelete = ticket }
+                            )
+                        }
                     }
                 }
             }
-        }
+        } // cierre Column principal
+        } // cierre Box global blobs
 
         if (showBottomSheet) {
             ModalBottomSheet(
@@ -954,23 +1004,33 @@ fun TicketItem(ticket: TicketEntity, onClick: () -> Unit, onDelete: () -> Unit) 
         else -> Icons.Default.ConfirmationNumber
     }
 
-    // Color de fondo para el cuerpo que resalte un poco más (#252836)
-    val bodyBackgroundColor = Color(0xFF252836) 
+    // Body: Charcoal oscuro del logo (cuerpo del wallet)
+    val bodyBackgroundColor = Color(0xFF141620)
+    // Header: Plateado — blanco desaturado semi-transparente sobre el fondo negro
+    val headerGlassColor = Color(0xFFCDD5E0).copy(alpha = 0.13f)
 
-    Card(
+    // Box con offscreen para que BlendMode.Clear funcione correctamente
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .clip(RoundedCornerShape(16.dp))
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+            .clickable { onClick() }
+            .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            // Capa Superior (Header) 
+            // Header: Glassmorphism Plateado
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color(0xFF172321))
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.White.copy(alpha = 0.16f), // Toque de plata arriba
+                                Color.White.copy(alpha = 0.08f)  // Se suaviza abajo
+                            )
+                        )
+                    )
                     .padding(16.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1010,38 +1070,48 @@ fun TicketItem(ticket: TicketEntity, onClick: () -> Unit, onDelete: () -> Unit) 
                 }
             }
 
-            // Capa de Conexión (Perforación)
-            Box(
+            // Perforación con agujeros reales usando BlendMode.Clear
+            Canvas(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(24.dp)
             ) {
-                Column {
-                    Box(modifier = Modifier.fillMaxWidth().weight(1f).background(Color(0xFF172321)))
-                    Box(modifier = Modifier.fillMaxWidth().weight(1f).background(bodyBackgroundColor))
-                }
-                
-                Surface(
-                    modifier = Modifier.offset(x = (-12).dp).align(Alignment.CenterStart).size(24.dp),
-                    color = MaterialTheme.colorScheme.background,
-                    shape = CircleShape
-                ) {}
-                
-                Surface(
-                    modifier = Modifier.offset(x = (12).dp).align(Alignment.CenterEnd).size(24.dp),
-                    color = MaterialTheme.colorScheme.background,
-                    shape = CircleShape
-                ) {}
-                
-                Canvas(modifier = Modifier.fillMaxWidth().align(Alignment.Center).padding(horizontal = 24.dp)) {
-                    drawLine(
-                        color = Color.White.copy(alpha = 0.1f),
-                        start = Offset(0f, 0f),
-                        end = Offset(size.width, 0f),
-                        strokeWidth = 2f,
-                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
-                    )
-                }
+                val halfH = size.height / 2f
+                val notchR = 13.dp.toPx()
+
+                // Fondo superior de la perforación (efecto glass plateado)
+                drawRect(
+                    color = Color.White.copy(alpha = 0.12f),
+                    size = Size(size.width, halfH)
+                )
+                // Fondo inferior de la perforación (navy body)
+                drawRect(
+                    color = bodyBackgroundColor,
+                    topLeft = Offset(0f, halfH),
+                    size = Size(size.width, halfH)
+                )
+                // Muesca izquierda: agujero real (transparente al fondo con blobs)
+                drawCircle(
+                    color = Color.Black,
+                    radius = notchR,
+                    center = Offset(-notchR * 0.25f, halfH),
+                    blendMode = BlendMode.Clear
+                )
+                // Muesca derecha: agujero real
+                drawCircle(
+                    color = Color.Black,
+                    radius = notchR,
+                    center = Offset(size.width + notchR * 0.25f, halfH),
+                    blendMode = BlendMode.Clear
+                )
+                // Línea punteada divisoria
+                drawLine(
+                    color = Color.White.copy(alpha = 0.20f),
+                    start = Offset(notchR + 10.dp.toPx(), halfH),
+                    end = Offset(size.width - notchR - 10.dp.toPx(), halfH),
+                    strokeWidth = 1.5f,
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 10f), 0f)
+                )
             }
 
             // Capa Inferior (Body)
