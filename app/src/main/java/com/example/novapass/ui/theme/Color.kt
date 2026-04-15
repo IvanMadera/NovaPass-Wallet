@@ -3,39 +3,54 @@ package com.example.novapass.ui.theme
 import androidx.compose.ui.graphics.Color
 
 // ============================================================
-// NovaPass Premium Design System — Color Tokens
-// ============================================
+// NovaPass Premium Design System — NovaColors System
+// ============================================================
 
-// -- Primary Background --
-val NovaBackground = Color(0xFF0B0F1A)      // Deep ambient navy/black
+object NovaColors {
+    val BackgroundPrimary = Color(0xFF0B0F1A)
+    val BackgroundSecondary = Color(0xFF121826)
 
-// -- Accents --
-val NovaPrimary = Color(0xFFD4AF37)         // Premium Gold Accent
-val NovaOnPrimary = Color(0xFF0B0F1A)       // Dark text on gold
+    val GlassLight = Color.White.copy(alpha = 0.08f)
+    val GlassMedium = Color.White.copy(alpha = 0.12f)
+    val GlassStrong = Color.White.copy(alpha = 0.18f)
 
-// -- Typography Hierarchy --
-val NovaTextPrimary = Color.White.copy(alpha = 0.90f)
-val NovaTextSecondary = Color.White.copy(alpha = 0.60f)
+    val BorderSubtle = Color.White.copy(alpha = 0.10f)
+    val BorderStrong = Color.White.copy(alpha = 0.20f)
+
+    val AccentPrimary = Color(0xFF6C8CFF)    // Blue Fintech 2026
+    val AccentSecondary = Color(0xFF9F7AEA)  // Purple Fintech 2026
+
+    val Success = Color(0xFF22C55E)
+    val Error = Color(0xFFEF4444)
+
+    val TextPrimary = Color.White.copy(alpha = 0.90f)
+    val TextSecondary = Color.White.copy(alpha = 0.60f)
+}
+
+// -- Legacy Mappings (Redirected to NovaColors) --
+val NovaBackground = NovaColors.BackgroundPrimary
+val NovaPrimary = NovaColors.AccentPrimary
+val NovaOnPrimary = NovaColors.BackgroundPrimary
+
+val NovaTextPrimary = NovaColors.TextPrimary
+val NovaTextSecondary = NovaColors.TextSecondary
 val NovaTextTertiary = Color.White.copy(alpha = 0.40f)
 
-// (Legacy text colors mapping)
 val NovaOnBackground = NovaTextPrimary
 val NovaOnSurface = NovaTextSecondary
 
-// -- Glassmorphism Tokens --
-val NovaGlassCard = Color.White.copy(alpha = 0.05f)        // 5% - 8% for surface cards
-val NovaGlassSheet = Color.White.copy(alpha = 0.12f)       // 10% - 12% for elevated bottom sheet
-val NovaGlassInputDefault = Color.White.copy(alpha = 0.06f) // Inputs unfocused
-val NovaGlassInputFocused = Color.White.copy(alpha = 0.10f) // Inputs focused
-val NovaGlassBorder = Color.White.copy(alpha = 0.12f)      // Edge highlights
+val NovaGlassCard = NovaColors.GlassLight
+val NovaGlassSheet = NovaColors.GlassStrong
+val NovaGlassInputDefault = NovaColors.GlassLight
+val NovaGlassInputFocused = NovaColors.GlassMedium
+val NovaGlassBorder = NovaColors.BorderSubtle
 
-// -- Functional Colors --
-val NovaSurface = NovaGlassCard             // Mapping Material surface
-val NovaSurfaceVariant = NovaGlassSheet
-val NovaInputBackground = NovaGlassInputDefault
-val NovaError = Color(0xFFCF6679)           // Error state
+val NovaSurface = NovaColors.GlassMedium
+val NovaSurfaceVariant = NovaColors.GlassStrong
+val NovaInputBackground = NovaColors.GlassLight
+val NovaError = NovaColors.Error
 
-// -- Glow/Ambient Colors --
-val NovaGlowGreen = Color(0xFF2DCA8C)       // Very subtle glow accent
-val NovaGlowGold = Color(0xFFD4AF37)        // Gold radial glow
-val NovaGlowBlue = Color(0xFF1D3A5F)        // Background depth glow
+// -- Ambient Glow Assets (Alpha reduced as per rule) --
+val NovaGlowGreen = Color(0xFF2DCA8C).copy(alpha = 0.12f)
+val NovaGlowGold = Color(0xFFD4AF37).copy(alpha = 0.12f)
+val NovaGlowBlue = Color(0xFF1D3A5F).copy(alpha = 0.15f)

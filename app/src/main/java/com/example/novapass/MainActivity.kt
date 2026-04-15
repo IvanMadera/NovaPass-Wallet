@@ -30,6 +30,7 @@ import android.app.Activity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.geometry.Offset
@@ -83,7 +84,6 @@ import java.time.format.DateTimeFormatter
 
 import android.graphics.pdf.PdfRenderer
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.ui.graphics.asImageBitmap
@@ -288,30 +288,41 @@ fun TicketListScreen(
         }
     }
 
+    val fabInteractionSource = remember { MutableInteractionSource() }
+    val fabPressed by fabInteractionSource.collectIsPressedAsState()
+    val fabScale by animateFloatAsState(if (fabPressed) 0.97f else 1f, label = "fabScale")
+
     Scaffold(
         floatingActionButton = {
-            // FAB PERSONALIZADO CON SOMBRA MANUAL (EVITA EL OCTÁGONO)
+            // FAB PERSONALIZADO CON SOMBRA MANUAL Y MICRO-INTERACCIÓN
             Box(
                 modifier = Modifier
-                    .padding(16.dp)
-                    .size(60.dp)
+                    .padding(NovaSpacing.md)
+                    .size(64.dp)
+                    .graphicsLayer {
+                        scaleX = fabScale
+                        scaleY = fabScale
+                    }
                     .drawBehind {
-                        // Resplandor dorado manual (sustituye a la sombra nativa rústica)
+                        // Resplandor de acento sutil
                         drawCircle(
                             brush = Brush.radialGradient(
-                                colors = listOf(NovaGlowGold.copy(alpha = 0.25f), Color.Transparent),
+                                colors = listOf(NovaColors.AccentPrimary.copy(alpha = 0.2f), Color.Transparent),
                                 center = center,
-                                radius = size.width * 0.7f
+                                radius = size.width * 0.8f
                             ),
-                            radius = size.width * 0.7f,
+                            radius = size.width * 0.8f,
                             center = center
                         )
                     }
                     .background(
-                        color = NovaPrimary,
+                        color = NovaColors.AccentPrimary,
                         shape = CircleShape
                     )
-                    .clickable {
+                    .clickable(
+                        interactionSource = fabInteractionSource,
+                        indication = LocalIndication.current
+                    ) {
                         selectedUri = null
                         selectedFileName = ""
                         ticketName = ""
@@ -330,8 +341,8 @@ fun TicketListScreen(
                 Icon(
                     Icons.Default.Add, 
                     contentDescription = "Add", 
-                    modifier = Modifier.size(30.dp),
-                    tint = NovaOnPrimary
+                    modifier = Modifier.size(32.dp),
+                    tint = NovaColors.BackgroundPrimary
                 )
             }
         },
@@ -341,26 +352,26 @@ fun TicketListScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background) // Fondo base
+                .background(
+                    Brush.radialGradient(
+                        colors = listOf(Color(0xFF1A1F35), NovaColors.BackgroundPrimary),
+                        center = androidx.compose.ui.geometry.Offset(0.5f, 0f),
+                        radius = 2000f
+                    )
+                )
         ) {
-            Canvas(modifier = Modifier.fillMaxSize().blur(80.dp)) {
-                // Glow 1: Ambient Green (top-left) - Design Rule
+            Canvas(modifier = Modifier.fillMaxSize().blur(100.dp)) {
+                // Glow 1: Ultra Ambient Accent (top-right)
                 drawCircle(
-                    color = NovaGlowGreen.copy(alpha = 0.05f),
-                    radius = size.width * 0.6f,
-                    center = androidx.compose.ui.geometry.Offset(size.width * 0.05f, size.height * 0.05f)
+                    color = NovaColors.AccentPrimary.copy(alpha = 0.08f),
+                    radius = size.width * 0.8f,
+                    center = androidx.compose.ui.geometry.Offset(size.width * 0.9f, size.height * 0.1f)
                 )
-                // Glow 2: Ambient Gold (top-right) - Design Rule
+                // Glow 2: Background Depth (bottom-left)
                 drawCircle(
-                    color = NovaGlowGold.copy(alpha = 0.05f),
-                    radius = size.width * 0.6f,
-                    center = androidx.compose.ui.geometry.Offset(size.width * 0.95f, size.height * 0.08f)
-                )
-                // Glow 3: Background Depth (bottom-center)
-                drawCircle(
-                    color = NovaGlowBlue.copy(alpha = 0.10f),
-                    radius = size.width * 0.5f,
-                    center = androidx.compose.ui.geometry.Offset(size.width * 0.5f, size.height * 0.6f)
+                    color = NovaColors.AccentSecondary.copy(alpha = 0.05f),
+                    radius = size.width * 0.7f,
+                    center = androidx.compose.ui.geometry.Offset(size.width * 0.1f, size.height * 0.8f)
                 )
             }
 
@@ -373,36 +384,36 @@ fun TicketListScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(NovaSpacing.md),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Surface(
-                    color = MaterialTheme.colorScheme.primary,
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-                    modifier = Modifier.size(48.dp)
+                    color = NovaColors.AccentPrimary,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.size(52.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             Icons.Default.ConfirmationNumber,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimary,
+                            tint = NovaColors.BackgroundPrimary,
                             modifier = Modifier.size(28.dp)
                         )
                     }
                 }
                 
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(NovaSpacing.md))
                 
                 Column {
                     Text(
                         text = "NovaPass Wallet",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onBackground
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = Color.White
                     )
                     Text(
                         text = "${tickets.size} boletos",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                        color = NovaColors.TextSecondary
                     )
                 }
             }
@@ -411,7 +422,7 @@ fun TicketListScreen(
             if (ticketToDelete != null) {
                 AlertDialog(
                     onDismissRequest = { ticketToDelete = null },
-                    containerColor = Color(0xFF172321), // Gris Premium de NovaPass
+                    containerColor = NovaColors.BackgroundSecondary,
                     shape = RoundedCornerShape(24.dp),
                     title = {
                         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -452,10 +463,10 @@ fun TicketListScreen(
                                     ticketToDelete = null
                                 },
                                 modifier = Modifier.weight(1f).height(48.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                                shape = RoundedCornerShape(24.dp)
+                                colors = ButtonDefaults.buttonColors(containerColor = NovaColors.AccentPrimary),
+                                shape = RoundedCornerShape(20.dp)
                             ) {
-                                Text("Eliminar", color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.labelLarge)
+                                Text("Eliminar", color = NovaColors.BackgroundPrimary, style = MaterialTheme.typography.labelLarge)
                             }
                         }
                     }
@@ -549,11 +560,11 @@ fun TicketListScreen(
             ModalBottomSheet(
                 onDismissRequest = { showBottomSheet = false },
                 sheetState = sheetState,
-                containerColor = NovaBackground, // Uso directo del color de fondo sólido
-                scrimColor = Color.Black.copy(alpha = 0.5f),
+                containerColor = NovaColors.BackgroundPrimary,
+                scrimColor = Color.Black.copy(alpha = 0.6f),
                 dragHandle = null, 
                 tonalElevation = 0.dp,
-                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
             ) {
                 Box(modifier = Modifier.fillMaxWidth()) {
                         // AMBIENTE QUANTUM TOTAL
@@ -585,8 +596,8 @@ fun TicketListScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .navigationBarsPadding() // Respeta el espacio de la barra de navegación de forma transparente
-                                .padding(horizontal = 24.dp),
-                            contentPadding = PaddingValues(bottom = 32.dp)
+                                .padding(horizontal = NovaSpacing.lg),
+                            contentPadding = PaddingValues(bottom = NovaSpacing.xl)
                         ) {
                             // 1. DRAG HANDLE
                             item {
@@ -600,7 +611,7 @@ fun TicketListScreen(
                                         modifier = Modifier
                                             .width(40.dp)
                                             .height(4.dp)
-                                            .background(NovaPrimary.copy(alpha = 0.4f), CircleShape)
+                                            .background(NovaColors.TextSecondary.copy(alpha = 0.4f), CircleShape)
                                     )
                                 }
                             }
@@ -614,10 +625,7 @@ fun TicketListScreen(
                                 ) {
                                     Text(
                                         "Detalles del Evento",
-                                        style = MaterialTheme.typography.titleLarge.copy(
-                                            fontWeight = FontWeight.ExtraBold,
-                                            letterSpacing = (-0.5).sp
-                                        ),
+                                        style = MaterialTheme.typography.headlineMedium,
                                         color = Color.White
                                     )
                                     IconButton(
@@ -625,52 +633,51 @@ fun TicketListScreen(
                                             showBottomSheet = false
                                             pendingTickets = emptyList()
                                         },
-                                        modifier = Modifier.background(Color.White.copy(alpha = 0.05f), CircleShape)
+                                        modifier = Modifier.background(NovaColors.GlassMedium, CircleShape)
                                     ) {
                                         Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = Color.White.copy(alpha = 0.7f))
                                     }
                                 }
-                                Spacer(modifier = Modifier.height(24.dp))
+                                Spacer(modifier = Modifier.height(NovaSpacing.lg))
                             }
 
                             // 3. PDF PICKER
                             item {
-                                Text("Selecciona el archivo *", style = MaterialTheme.typography.labelMedium, color = Color.White.copy(alpha = 0.5f))
-                                Spacer(modifier = Modifier.height(10.dp))
+                                Text("Selecciona el archivo *", style = MaterialTheme.typography.labelMedium, color = NovaColors.TextSecondary)
+                                Spacer(modifier = Modifier.height(NovaSpacing.sm))
                                 
-                                Surface(
+                                Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .clickable { filePickerLauncher.launch(arrayOf("application/pdf")) }
+                                        .clip(RoundedCornerShape(20.dp))
+                                        .background(if (selectedUri == null) NovaColors.GlassLight else NovaColors.GlassMedium)
                                         .border(
                                             1.dp, 
-                                            if (selectedUri == null) NovaGlassBorder else NovaPrimary.copy(alpha = 0.5f),
-                                            RoundedCornerShape(16.dp)
-                                        ),
-                                    color = if (selectedUri == null) NovaGlassInputDefault else NovaSurfaceVariant,
-                                    shape = RoundedCornerShape(16.dp)
+                                            if (selectedUri == null) NovaColors.BorderSubtle else NovaColors.AccentPrimary.copy(alpha = 0.5f),
+                                            RoundedCornerShape(20.dp)
+                                        )
+                                        .clickable { filePickerLauncher.launch(arrayOf("application/pdf")) }
                                 ) {
                                     Row(
-                                        modifier = Modifier.padding(18.dp),
+                                        modifier = Modifier.padding(NovaSpacing.md),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Icon(
                                             if (selectedUri == null) Icons.Default.Description else Icons.Default.CheckCircle,
                                             contentDescription = null,
-                                            tint = if (selectedUri == null) Color.White.copy(alpha = 0.4f) else NovaPrimary,
+                                            tint = if (selectedUri == null) NovaColors.TextSecondary.copy(alpha = 0.4f) else NovaColors.AccentPrimary,
                                             modifier = Modifier.size(24.dp)
                                         )
-                                        Spacer(modifier = Modifier.width(14.dp))
+                                        Spacer(modifier = Modifier.width(NovaSpacing.md))
                                         Text(
                                             if (selectedUri == null) "Toque para seleccionar PDF" else selectedFileName,
                                             style = MaterialTheme.typography.bodyMedium,
-                                            color = if (selectedUri == null) Color.White.copy(alpha = 0.7f) else NovaPrimary,
-                                            maxLines = 1,
-                                            fontWeight = if (selectedUri != null) FontWeight.SemiBold else FontWeight.Normal
+                                            color = if (selectedUri == null) NovaColors.TextSecondary else NovaColors.AccentPrimary,
+                                            maxLines = 1
                                         )
                                     }
                                 }
-                                Spacer(modifier = Modifier.height(24.dp))
+                                Spacer(modifier = Modifier.height(NovaSpacing.lg))
                             }
 
                             // 4. FORM CONTENT
@@ -692,35 +699,35 @@ fun TicketListScreen(
                                     Box(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(vertical = 5.dp)
-                                            .clip(RoundedCornerShape(16.dp))
-                                            .background(if (isEditing) Color.White.copy(alpha = 0.06f) else Color.White.copy(alpha = 0.02f))
+                                            .padding(vertical = NovaSpacing.xs)
+                                            .clip(RoundedCornerShape(20.dp))
+                                            .background(if (isEditing) NovaColors.GlassMedium else NovaColors.GlassLight)
                                             .border(
                                                 1.dp,
-                                                if (isEditing) NovaPrimary.copy(alpha = 0.3f) else Color.White.copy(alpha = 0.1f),
-                                                RoundedCornerShape(16.dp)
+                                                if (isEditing) NovaColors.AccentPrimary.copy(alpha = 0.3f) else NovaColors.BorderSubtle,
+                                                RoundedCornerShape(20.dp)
                                             )
                                             .clickable { editingTicketIndex = if (isEditing) null else index }
                                     ) {
-                                        Column(modifier = Modifier.padding(14.dp)) {
+                                        Column(modifier = Modifier.padding(NovaSpacing.md)) {
                                             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                                                 Surface(
-                                                    color = if (isEditing) NovaPrimary else Color.White.copy(alpha = 0.1f),
+                                                    color = if (isEditing) NovaColors.AccentPrimary else NovaColors.GlassMedium,
                                                     shape = CircleShape,
-                                                    modifier = Modifier.size(28.dp)
+                                                    modifier = Modifier.size(32.dp)
                                                 ) {
                                                     Box(contentAlignment = Alignment.Center) {
-                                                        Text("${index + 1}", color = if (isEditing) Color.Black else Color.White, fontWeight = FontWeight.Bold)
+                                                        Text("${index + 1}", color = if (isEditing) NovaColors.BackgroundPrimary else Color.White, fontWeight = FontWeight.Bold)
                                                     }
                                                 }
-                                                Spacer(modifier = Modifier.width(14.dp))
+                                                Spacer(modifier = Modifier.width(NovaSpacing.md))
                                                 Text(pTicket.eventName, modifier = Modifier.weight(1f), color = Color.White, fontWeight = FontWeight.Bold)
-                                                Icon(if (isEditing) Icons.Default.KeyboardArrowUp else Icons.Default.Edit, contentDescription = null, tint = Color.White.copy(alpha = 0.4f))
+                                                Icon(if (isEditing) Icons.Default.KeyboardArrowUp else Icons.Default.Edit, contentDescription = null, tint = NovaColors.TextSecondary)
                                             }
                                             
                                             androidx.compose.animation.AnimatedVisibility(visible = isEditing) {
                                                 Column {
-                                                    Spacer(modifier = Modifier.height(16.dp))
+                                                    Spacer(modifier = Modifier.height(NovaSpacing.md))
                                                     CustomInputField(
                                                         value = pTicket.eventName,
                                                         onValueChange = { newVal ->
@@ -763,27 +770,36 @@ fun TicketListScreen(
                                 item { Spacer(modifier = Modifier.height(24.dp)) }
                             } else {
                                 item {
-                                    Text("Categoría", style = MaterialTheme.typography.labelMedium, color = Color.White.copy(alpha = 0.5f))
-                                    Spacer(modifier = Modifier.height(12.dp))
+                                    Text("Categoría", style = MaterialTheme.typography.labelMedium, color = NovaColors.TextSecondary)
+                                    Spacer(modifier = Modifier.height(NovaSpacing.sm))
                                     
                                     Row(
                                         modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                        horizontalArrangement = Arrangement.spacedBy(NovaSpacing.sm)
                                     ) {
                                         categories.forEach { category ->
                                             val isSelected = selectedCategory == category
                                             Box(
                                                 modifier = Modifier
                                                     .clip(RoundedCornerShape(20.dp))
-                                                    .background(if (isSelected) NovaPrimary else Color.White.copy(alpha = 0.05f))
+                                                    .background(if (isSelected) NovaColors.AccentPrimary else NovaColors.GlassLight)
+                                                    .border(
+                                                        1.dp,
+                                                        if (isSelected) Color.Transparent else NovaColors.BorderSubtle,
+                                                        RoundedCornerShape(20.dp)
+                                                    )
                                                     .clickable { selectedCategory = category }
-                                                    .padding(horizontal = 20.dp, vertical = 10.dp)
+                                                    .padding(horizontal = NovaSpacing.md, vertical = NovaSpacing.sm)
                                             ) {
-                                                Text(category, color = if (isSelected) Color.Black else Color.White.copy(alpha = 0.7f))
+                                                Text(
+                                                    category, 
+                                                    color = if (isSelected) NovaColors.BackgroundPrimary else NovaColors.TextSecondary,
+                                                    style = MaterialTheme.typography.labelLarge
+                                                )
                                             }
                                         }
                                     }
-                                    Spacer(modifier = Modifier.height(24.dp))
+                                    Spacer(modifier = Modifier.height(NovaSpacing.lg))
 
                                     CustomInputField(
                                         value = ticketName,
@@ -811,19 +827,28 @@ fun TicketListScreen(
 
                             // 5. SAVE BUTTON
                             item {
+                                val saveInteractionSource = remember { MutableInteractionSource() }
+                                val savePressed by saveInteractionSource.collectIsPressedAsState()
+                                val saveScale by animateFloatAsState(if (savePressed) 0.97f else 1f, label = "saveScale")
+                                val isEnabled = (ticketName.isNotBlank() || pendingTickets.isNotEmpty()) && selectedUri != null && !isVerifying
+
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .height(56.dp)
-                                        .clip(RoundedCornerShape(16.dp))
+                                        .height(60.dp)
+                                        .graphicsLayer {
+                                            scaleX = if (isEnabled) saveScale else 1f
+                                            scaleY = if (isEnabled) saveScale else 1f
+                                        }
+                                        .clip(RoundedCornerShape(20.dp))
                                         .background(
-                                            if ((ticketName.isNotBlank() || pendingTickets.isNotEmpty()) && selectedUri != null && !isVerifying) {
-                                                NovaPrimary
-                                            } else {
-                                                NovaGlassCard
-                                            }
+                                            if (isEnabled) NovaColors.AccentPrimary else NovaColors.GlassLight
                                         )
-                                        .clickable(enabled = (ticketName.isNotBlank() || pendingTickets.isNotEmpty()) && selectedUri != null && !isVerifying) {
+                                        .clickable(
+                                            enabled = isEnabled,
+                                            interactionSource = saveInteractionSource,
+                                            indication = LocalIndication.current
+                                        ) {
                                             selectedUri?.let { uri ->
                                                 coroutineScope.launch {
                                                     try {
@@ -848,7 +873,7 @@ fun TicketListScreen(
                                     } else {
                                         Text(
                                             if (pendingTickets.size > 1) "Guardar ${pendingTickets.size} Boletos" else "Guardar Boleto",
-                                            color = if ((ticketName.isNotBlank() || pendingTickets.isNotEmpty()) && selectedUri != null && !isVerifying) Color.Black else Color.White.copy(alpha = 0.3f),
+                                            color = if (isEnabled) NovaColors.BackgroundPrimary else NovaColors.TextSecondary.copy(alpha = 0.3f),
                                             fontWeight = FontWeight.ExtraBold
                                         )
                                  }
@@ -997,6 +1022,30 @@ fun TicketListScreen(
 }
 }
 
+// ============================================================
+// NovaPass Premium Design System — UI Components
+// ============================================================
+
+@Composable
+fun GlassCard(
+    modifier: Modifier = Modifier,
+    cornerRadius: Dp = 20.dp,
+    content: @Composable () -> Unit
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(cornerRadius))
+            .background(NovaColors.GlassLight)
+            .border(
+                width = 1.dp,
+                color = NovaColors.BorderSubtle,
+                shape = RoundedCornerShape(cornerRadius)
+            )
+    ) {
+        content()
+    }
+}
+
 @Composable
 fun CustomInputField(
     value: String,
@@ -1012,38 +1061,38 @@ fun CustomInputField(
         Text(
             label, 
             style = MaterialTheme.typography.labelMedium,
-            color = Color.White.copy(alpha = 0.6f),
+            color = NovaColors.TextSecondary,
             fontWeight = FontWeight.Medium
         )
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(NovaSpacing.sm))
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
-                .clip(RoundedCornerShape(14.dp))
+                .clip(RoundedCornerShape(20.dp))
                 .border(
                     1.dp, 
                     Color.Transparent,
-                    RoundedCornerShape(14.dp)
+                    RoundedCornerShape(20.dp)
                 )
         ) {
             OutlinedTextField(
                 value = value,
                 onValueChange = onValueChange,
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text(placeholder, color = Color.White.copy(alpha = 0.25f)) },
-                shape = RoundedCornerShape(14.dp),
+                placeholder = { Text(placeholder, color = NovaColors.TextSecondary.copy(alpha = 0.4f)) },
+                shape = RoundedCornerShape(20.dp),
                 readOnly = readOnly,
                 enabled = enabled,
                 textStyle = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = NovaPrimary.copy(alpha = 0.5f),
+                    focusedBorderColor = NovaColors.AccentPrimary.copy(alpha = 0.5f),
                     unfocusedBorderColor = Color.Transparent,
-                    focusedContainerColor = NovaGlassInputFocused,
-                    unfocusedContainerColor = NovaGlassInputDefault,
+                    focusedContainerColor = NovaColors.GlassMedium,
+                    unfocusedContainerColor = NovaColors.GlassLight,
                     disabledBorderColor = Color.Transparent,
-                    disabledContainerColor = NovaGlassInputDefault.copy(alpha = 0.5f),
-                    disabledTextColor = NovaTextSecondary
+                    disabledContainerColor = NovaColors.GlassLight.copy(alpha = 0.5f),
+                    disabledTextColor = NovaColors.TextSecondary
                 ),
                 singleLine = true
             )
@@ -1071,92 +1120,70 @@ fun TicketItem(ticket: TicketEntity, onClick: () -> Unit, onDelete: () -> Unit) 
 
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(targetValue = if (isPressed) 0.98f else 1f, label = "ticketScale")
+    val scale by animateFloatAsState(targetValue = if (isPressed) 0.97f else 1f, label = "ticketScale")
 
-    // Body del ticket: superficie de cristal más visible (alpha incrementado para contraste)
-    val bodyBackgroundColor = NovaGlassCard
-    // Color de borde cristal (design system: glass border rgba(255,255,255,0.12))
-    val glassBorderColor = NovaGlassBorder
-
-    // Box con offscreen + border de cristal dibujado antes del contenido
-    // El BlendMode.Clear de las muñecas borrará también el borde — dando notches naturales
-    Box(
+    GlassCard(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = NovaSpacing.md, vertical = NovaSpacing.sm)
             .graphicsLayer { 
                 compositingStrategy = CompositingStrategy.Offscreen
                 scaleX = scale
                 scaleY = scale
-            } // Layer para BlendMode.Clear y escala animada
-            .drawWithContent {
-                // Inset de 0.5dp para evitar que el clip corte el borde y genere una "sombra" extraña
-                val strokeW = 1.dp.toPx()
-                drawRoundRect(
-                    color = glassBorderColor,
-                    topLeft = Offset(strokeW / 2, strokeW / 2),
-                    size = Size(size.width - strokeW, size.height - strokeW),
-                    cornerRadius = CornerRadius(16.dp.toPx()),
-                    style = Stroke(width = strokeW)
-                )
-                drawContent()
             }
-            .clip(RoundedCornerShape(16.dp))
             .clickable(interactionSource = interactionSource, indication = LocalIndication.current) { onClick() }
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            // Header: Green-tinted glass (design system: tinted green glow + light reflection)
+            // Header: Glass layer with subtle accent glow
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(
                         Brush.verticalGradient(
                             colors = listOf(
-                                NovaGlowGreen.copy(alpha = 0.02f), // Más ligero arriba
-                                NovaGlowGreen.copy(alpha = 0.05f)  // Más intenso hacia el divisor
+                                NovaColors.AccentPrimary.copy(alpha = 0.02f),
+                                NovaColors.AccentPrimary.copy(alpha = 0.08f)
                             )
                         )
                     )
-                    .padding(16.dp)
+                    .padding(NovaSpacing.md)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    // Icon circle: glass con border dorado (design system: circular glass container + accent border)
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
-                            .background(Color.White.copy(alpha = 0.07f), CircleShape)
-                            .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.50f), CircleShape),
+                            .size(40.dp)
+                            .background(NovaColors.GlassMedium, CircleShape)
+                            .border(1.dp, NovaColors.AccentPrimary.copy(alpha = 0.3f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             categoryIcon,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
+                            tint = NovaColors.AccentPrimary,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                     
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(NovaSpacing.md))
                     
                     Text(
                         text = ticket.name.uppercase(),
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = Color.White,
                         maxLines = 2,
-                        lineHeight = 18.sp,
                         modifier = Modifier.weight(1f)
                     )
                     
                     IconButton(
                         onClick = onDelete,
-                        modifier = Modifier.size(24.dp),
-                        colors = IconButtonDefaults.iconButtonColors(contentColor = Color.White.copy(alpha = 0.3f))
+                        modifier = Modifier.size(24.dp)
                     ) {
-                        Icon(Icons.Default.Close, contentDescription = "Eliminar", modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.Close, contentDescription = "Eliminar", tint = NovaColors.TextSecondary, modifier = Modifier.size(18.dp))
                     }
                 }
             }
 
+            // Perforación con agujeros reales usando BlendMode.Clear
             // Perforación con agujeros reales usando BlendMode.Clear
             Canvas(
                 modifier = Modifier
@@ -1164,67 +1191,65 @@ fun TicketItem(ticket: TicketEntity, onClick: () -> Unit, onDelete: () -> Unit) 
                     .height(24.dp)
             ) {
                 val halfH = size.height / 2f
-                val notchR = 13.dp.toPx()
+                val notchR = 12.dp.toPx()
 
-                // Fondo superior de la perforación (Coincide exactamente con el final del header)
+                // Background continuity layers
                 drawRect(
-                    color = NovaGlowGreen.copy(alpha = 0.05f),
+                    color = NovaColors.AccentPrimary.copy(alpha = 0.08f),
                     size = Size(size.width, halfH)
                 )
-                // Fondo inferior de la perforación (navy body)
                 drawRect(
-                    color = bodyBackgroundColor,
+                    color = Color.Transparent, // El fondo de la GlassCard ya es GlassLight
                     topLeft = Offset(0f, halfH),
                     size = Size(size.width, halfH)
                 )
-                // Muesca izquierda: agujero real (transparente al fondo con blobs)
+                
+                // Muesca izquierda (Clear to show background blobs)
                 drawCircle(
                     color = Color.Black,
                     radius = notchR,
-                    center = Offset(-notchR * 0.25f, halfH),
+                    center = Offset(-notchR * 0.1f, halfH),
                     blendMode = BlendMode.Clear
                 )
-                // Muesca derecha: agujero real
+                // Muesca derecha
                 drawCircle(
                     color = Color.Black,
                     radius = notchR,
-                    center = Offset(size.width + notchR * 0.25f, halfH),
+                    center = Offset(size.width + notchR * 0.1f, halfH),
                     blendMode = BlendMode.Clear
                 )
-                // Línea punteada divisoria
+                // Línea punteada premium
                 drawLine(
-                    color = Color.White.copy(alpha = 0.20f),
+                    color = NovaColors.BorderSubtle,
                     start = Offset(notchR + 10.dp.toPx(), halfH),
                     end = Offset(size.width - notchR - 10.dp.toPx(), halfH),
-                    strokeWidth = 1.5f,
-                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 10f), 0f)
+                    strokeWidth = 1f,
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 12f), 0f)
                 )
             }
 
-            // Capa Inferior (Body)
+            // Capa Inferior (Body Content)
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(bodyBackgroundColor)
-                    .padding(start = 16.dp, end = 16.dp, bottom = 16.dp, top = 4.dp)
+                    .padding(start = NovaSpacing.md, end = NovaSpacing.md, bottom = NovaSpacing.md, top = 4.dp)
             ) {
-                // Fila de Fecha y Hora (AM/PM)
+                // Fila de Fecha y Hora
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Event, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                // Fecha: secundary text (design system: metadata color)
+                    Icon(Icons.Default.Event, null, tint = NovaColors.AccentPrimary, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(NovaSpacing.sm))
                     Text(
                         ticket.eventDate ?: "Fecha TBD",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface, // #8B9BB4
+                        color = NovaColors.TextSecondary,
                         maxLines = 1,
                         modifier = Modifier.weight(1f)
                     )
                     
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(NovaSpacing.sm))
                     
-                    Icon(Icons.Default.AccessTime, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Icon(Icons.Default.AccessTime, null, tint = NovaColors.AccentPrimary, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(NovaSpacing.xs))
                     
                     val formattedTime = remember(ticket.eventTime) {
                         try {
@@ -1243,19 +1268,19 @@ fun TicketItem(ticket: TicketEntity, onClick: () -> Unit, onDelete: () -> Unit) 
                     // Hora: no gold, use white (design system rule)
                     Text(
                         formattedTime,
-                        style = MaterialTheme.typography.bodyMedium.copy(
+                        style = MaterialTheme.typography.bodyLarge.copy(
                             fontWeight = FontWeight.Bold,
-                            color = NovaTextPrimary
+                            color = Color.White
                         )
                     )
                 }
                 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(NovaSpacing.sm))
                 
                 // Fila de Ubicación/Asiento Combinada
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.EventSeat, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Icon(Icons.Default.Weekend, null, tint = NovaColors.AccentPrimary, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(NovaSpacing.sm))
                     
                     val locationParts = mutableListOf<String>()
                     if (!ticket.section.isNullOrBlank()) locationParts.add("Sección ${ticket.section}")
@@ -1266,8 +1291,8 @@ fun TicketItem(ticket: TicketEntity, onClick: () -> Unit, onDelete: () -> Unit) 
                     
                     Text(
                         locationText.uppercase(),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface, // Secondary text #8B9BB4
+                        style = MaterialTheme.typography.labelMedium,
+                        color = NovaColors.TextSecondary,
                         maxLines = 1
                     )
                 }
@@ -1281,35 +1306,34 @@ fun EmptyStateView(isSearch: Boolean) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .padding(NovaSpacing.xl),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Surface(
-            color = NovaGlassCard,
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(32.dp),
+        GlassCard(
+            cornerRadius = 32.dp,
             modifier = Modifier.size(120.dp)
         ) {
-            Box(contentAlignment = Alignment.Center) {
+            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                 Icon(
                     Icons.Default.ConfirmationNumber,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = NovaColors.AccentPrimary,
                     modifier = Modifier.size(64.dp)
                 )
             }
         }
         
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(NovaSpacing.lg))
         
         Text(
             text = if (isSearch) "Sin coincidencias" else "Tu wallet está vacía",
-            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
-            color = NovaTextPrimary,
+            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+            color = Color.White,
             textAlign = TextAlign.Center
         )
         
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(NovaSpacing.sm))
         
         Text(
             text = if (isSearch) 
@@ -1317,7 +1341,7 @@ fun EmptyStateView(isSearch: Boolean) {
             else 
                 "Agrega tu primer boleto tocando el botón de abajo",
             style = MaterialTheme.typography.bodyMedium,
-            color = NovaTextSecondary,
+            color = NovaColors.TextSecondary,
             textAlign = TextAlign.Center
         )
     }
