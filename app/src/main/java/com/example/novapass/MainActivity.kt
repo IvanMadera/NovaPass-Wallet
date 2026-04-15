@@ -307,7 +307,7 @@ fun TicketListScreen(
                         // Resplandor de acento sutil
                         drawCircle(
                             brush = Brush.radialGradient(
-                                colors = listOf(NovaColors.AccentPrimary.copy(alpha = 0.2f), Color.Transparent),
+                                colors = listOf(NovaColors.GoldPrimary.copy(alpha = 0.2f), Color.Transparent),
                                 center = center,
                                 radius = size.width * 0.8f
                             ),
@@ -316,7 +316,9 @@ fun TicketListScreen(
                         )
                     }
                     .background(
-                        color = NovaColors.AccentPrimary,
+                        brush = Brush.linearGradient(
+                            listOf(Color(0xFFFFEA9E), NovaColors.GoldPrimary)
+                        ),
                         shape = CircleShape
                     )
                     .clickable(
@@ -360,18 +362,18 @@ fun TicketListScreen(
                     )
                 )
         ) {
-            Canvas(modifier = Modifier.fillMaxSize().blur(100.dp)) {
+            Canvas(modifier = Modifier.fillMaxSize().blur(140.dp)) {
                 // Glow 1: Ultra Ambient Accent (top-right)
                 drawCircle(
-                    color = NovaColors.AccentPrimary.copy(alpha = 0.08f),
-                    radius = size.width * 0.8f,
+                    color = NovaColors.GoldPrimary.copy(alpha = 0.12f),
+                    radius = size.width * 0.9f,
                     center = androidx.compose.ui.geometry.Offset(size.width * 0.9f, size.height * 0.1f)
                 )
-                // Glow 2: Background Depth (bottom-left)
+                // Glow 2: Background Depth (bottom-left / Cyan influence)
                 drawCircle(
-                    color = NovaColors.AccentSecondary.copy(alpha = 0.05f),
-                    radius = size.width * 0.7f,
-                    center = androidx.compose.ui.geometry.Offset(size.width * 0.1f, size.height * 0.8f)
+                    color = NovaColors.GreenPrimary.copy(alpha = 0.18f),
+                    radius = size.width * 0.8f,
+                    center = androidx.compose.ui.geometry.Offset(size.width * 0.1f, size.height * 0.85f)
                 )
             }
 
@@ -388,15 +390,27 @@ fun TicketListScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Surface(
-                    color = NovaColors.AccentPrimary,
+                    color = Color.Transparent,
                     shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.size(52.dp)
+                    modifier = Modifier
+                        .size(52.dp)
+                        .background(
+                            NovaColors.BackgroundSecondary,
+                            RoundedCornerShape(12.dp)
+                        )
+                        .border(
+                            1.dp,
+                            Brush.linearGradient(
+                                listOf(NovaColors.GoldPrimary, NovaColors.GreenPrimary)
+                            ),
+                            RoundedCornerShape(12.dp)
+                        )
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             Icons.Default.ConfirmationNumber,
                             contentDescription = null,
-                            tint = NovaColors.BackgroundPrimary,
+                            tint = NovaColors.GoldPrimary,
                             modifier = Modifier.size(28.dp)
                         )
                     }
@@ -463,7 +477,7 @@ fun TicketListScreen(
                                     ticketToDelete = null
                                 },
                                 modifier = Modifier.weight(1f).height(48.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = NovaColors.AccentPrimary),
+                                colors = ButtonDefaults.buttonColors(containerColor = NovaColors.GoldPrimary),
                                 shape = RoundedCornerShape(20.dp)
                             ) {
                                 Text("Eliminar", color = NovaColors.BackgroundPrimary, style = MaterialTheme.typography.labelLarge)
@@ -574,21 +588,14 @@ fun TicketListScreen(
                                 .blur(80.dp)
                         ) {
                             drawCircle(
-                                color = NovaGlowGreen.copy(alpha = 0.05f),
+                                color = NovaColors.GoldPrimary.copy(alpha = 0.10f),
                                 radius = size.width * 0.6f,
                                 center = Offset(size.width * 0.3f, size.height * 0.1f)
                             )
                             drawCircle(
-                                brush = Brush.radialGradient(
-                                    colors = listOf(NovaGlowBlue.copy(alpha = 0.10f), Color.Transparent)
-                                ),
+                                color = NovaColors.GreenPrimary.copy(alpha = 0.15f),
                                 radius = size.width * 0.85f,
                                 center = Offset(size.width * 0.8f, size.height * 0.4f)
-                            )
-                            drawCircle(
-                                color = NovaGlowGreen.copy(alpha = 0.05f),
-                                radius = size.width * 0.5f,
-                                center = Offset(size.width * 0.95f, size.height * 0.85f)
                             )
                         }
 
@@ -653,7 +660,7 @@ fun TicketListScreen(
                                         .background(if (selectedUri == null) NovaColors.GlassLight else NovaColors.GlassMedium)
                                         .border(
                                             1.dp, 
-                                            if (selectedUri == null) NovaColors.BorderSubtle else NovaColors.AccentPrimary.copy(alpha = 0.5f),
+                                            if (selectedUri == null) NovaColors.BorderSubtle else NovaColors.GoldPrimary.copy(alpha = 0.5f),
                                             RoundedCornerShape(20.dp)
                                         )
                                         .clickable { filePickerLauncher.launch(arrayOf("application/pdf")) }
@@ -665,14 +672,14 @@ fun TicketListScreen(
                                         Icon(
                                             if (selectedUri == null) Icons.Default.Description else Icons.Default.CheckCircle,
                                             contentDescription = null,
-                                            tint = if (selectedUri == null) NovaColors.TextSecondary.copy(alpha = 0.4f) else NovaColors.AccentPrimary,
+                                            tint = if (selectedUri == null) NovaColors.TextSecondary.copy(alpha = 0.4f) else NovaColors.GoldPrimary,
                                             modifier = Modifier.size(24.dp)
                                         )
                                         Spacer(modifier = Modifier.width(NovaSpacing.md))
                                         Text(
                                             if (selectedUri == null) "Toque para seleccionar PDF" else selectedFileName,
                                             style = MaterialTheme.typography.bodyMedium,
-                                            color = if (selectedUri == null) NovaColors.TextSecondary else NovaColors.AccentPrimary,
+                                            color = if (selectedUri == null) NovaColors.TextSecondary else NovaColors.GoldPrimary,
                                             maxLines = 1
                                         )
                                     }
@@ -704,25 +711,25 @@ fun TicketListScreen(
                                             .background(if (isEditing) NovaColors.GlassMedium else NovaColors.GlassLight)
                                             .border(
                                                 1.dp,
-                                                if (isEditing) NovaColors.AccentPrimary.copy(alpha = 0.3f) else NovaColors.BorderSubtle,
+                                                if (isEditing) NovaColors.GoldPrimary.copy(alpha = 0.3f) else NovaColors.BorderSubtle,
                                                 RoundedCornerShape(20.dp)
                                             )
                                             .clickable { editingTicketIndex = if (isEditing) null else index }
                                     ) {
                                         Column(modifier = Modifier.padding(NovaSpacing.md)) {
-                                            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                            Row(modifier = Modifier.fillMaxWidth().padding(NovaSpacing.sm), verticalAlignment = Alignment.CenterVertically) {
                                                 Surface(
-                                                    color = if (isEditing) NovaColors.AccentPrimary else NovaColors.GlassMedium,
+                                                    color = if (isEditing) NovaColors.GoldPrimary else NovaColors.BackgroundSecondary,
                                                     shape = CircleShape,
-                                                    modifier = Modifier.size(32.dp)
+                                                    modifier = Modifier.size(36.dp).border(1.dp, if(isEditing) Color.Transparent else NovaColors.BorderSubtle, CircleShape)
                                                 ) {
                                                     Box(contentAlignment = Alignment.Center) {
-                                                        Text("${index + 1}", color = if (isEditing) NovaColors.BackgroundPrimary else Color.White, fontWeight = FontWeight.Bold)
+                                                        Text("${index + 1}", color = if (isEditing) NovaColors.BackgroundPrimary else NovaColors.GoldPrimary, fontWeight = FontWeight.Bold)
                                                     }
                                                 }
                                                 Spacer(modifier = Modifier.width(NovaSpacing.md))
-                                                Text(pTicket.eventName, modifier = Modifier.weight(1f), color = Color.White, fontWeight = FontWeight.Bold)
-                                                Icon(if (isEditing) Icons.Default.KeyboardArrowUp else Icons.Default.Edit, contentDescription = null, tint = NovaColors.TextSecondary)
+                                                Text(pTicket.eventName, modifier = Modifier.weight(1f), color = NovaColors.TextPrimary, fontWeight = FontWeight.Bold)
+                                                Icon(if (isEditing) Icons.Default.KeyboardArrowUp else Icons.Default.Edit, contentDescription = null, tint = NovaColors.GoldPrimary.copy(alpha = 0.7f))
                                             }
                                             
                                             androidx.compose.animation.AnimatedVisibility(visible = isEditing) {
@@ -782,7 +789,7 @@ fun TicketListScreen(
                                             Box(
                                                 modifier = Modifier
                                                     .clip(RoundedCornerShape(20.dp))
-                                                    .background(if (isSelected) NovaColors.AccentPrimary else NovaColors.GlassLight)
+                                                    .background(if (isSelected) Brush.linearGradient(listOf(Color(0xFFFFEA9E), NovaColors.GoldPrimary)) else androidx.compose.ui.graphics.SolidColor(NovaColors.GlassLight))
                                                     .border(
                                                         1.dp,
                                                         if (isSelected) Color.Transparent else NovaColors.BorderSubtle,
@@ -841,8 +848,9 @@ fun TicketListScreen(
                                             scaleY = if (isEnabled) saveScale else 1f
                                         }
                                         .clip(RoundedCornerShape(20.dp))
-                                        .background(
-                                            if (isEnabled) NovaColors.AccentPrimary else NovaColors.GlassLight
+                                        .then(
+                                            if (isEnabled) Modifier.background(Brush.linearGradient(listOf(Color(0xFFFFEA9E), NovaColors.GoldPrimary)))
+                                            else Modifier.background(NovaColors.GlassLight)
                                         )
                                         .clickable(
                                             enabled = isEnabled,
@@ -1086,7 +1094,7 @@ fun CustomInputField(
                 enabled = enabled,
                 textStyle = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = NovaColors.AccentPrimary.copy(alpha = 0.5f),
+                    focusedBorderColor = NovaColors.GoldPrimary.copy(alpha = 0.5f),
                     unfocusedBorderColor = Color.Transparent,
                     focusedContainerColor = NovaColors.GlassMedium,
                     unfocusedContainerColor = NovaColors.GlassLight,
@@ -1141,8 +1149,8 @@ fun TicketItem(ticket: TicketEntity, onClick: () -> Unit, onDelete: () -> Unit) 
                     .background(
                         Brush.verticalGradient(
                             colors = listOf(
-                                NovaColors.AccentPrimary.copy(alpha = 0.02f),
-                                NovaColors.AccentPrimary.copy(alpha = 0.08f)
+                                NovaColors.GoldPrimary.copy(alpha = 0.02f),
+                                NovaColors.GoldPrimary.copy(alpha = 0.08f)
                             )
                         )
                     )
@@ -1153,13 +1161,13 @@ fun TicketItem(ticket: TicketEntity, onClick: () -> Unit, onDelete: () -> Unit) 
                         modifier = Modifier
                             .size(40.dp)
                             .background(NovaColors.GlassMedium, CircleShape)
-                            .border(1.dp, NovaColors.AccentPrimary.copy(alpha = 0.3f), CircleShape),
+                            .border(1.dp, NovaColors.GoldPrimary.copy(alpha = 0.3f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             categoryIcon,
                             contentDescription = null,
-                            tint = NovaColors.AccentPrimary,
+                            tint = NovaColors.GoldPrimary,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -1195,7 +1203,7 @@ fun TicketItem(ticket: TicketEntity, onClick: () -> Unit, onDelete: () -> Unit) 
 
                 // Background continuity layers
                 drawRect(
-                    color = NovaColors.AccentPrimary.copy(alpha = 0.08f),
+                    color = NovaColors.GoldPrimary.copy(alpha = 0.08f),
                     size = Size(size.width, halfH)
                 )
                 drawRect(
@@ -1236,7 +1244,7 @@ fun TicketItem(ticket: TicketEntity, onClick: () -> Unit, onDelete: () -> Unit) 
             ) {
                 // Fila de Fecha y Hora
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Event, null, tint = NovaColors.AccentPrimary, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.Event, null, tint = NovaColors.GoldPrimary, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(NovaSpacing.sm))
                     Text(
                         ticket.eventDate ?: "Fecha TBD",
@@ -1248,7 +1256,7 @@ fun TicketItem(ticket: TicketEntity, onClick: () -> Unit, onDelete: () -> Unit) 
                     
                     Spacer(modifier = Modifier.width(NovaSpacing.sm))
                     
-                    Icon(Icons.Default.AccessTime, null, tint = NovaColors.AccentPrimary, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.AccessTime, null, tint = NovaColors.GoldPrimary, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(NovaSpacing.xs))
                     
                     val formattedTime = remember(ticket.eventTime) {
@@ -1279,7 +1287,7 @@ fun TicketItem(ticket: TicketEntity, onClick: () -> Unit, onDelete: () -> Unit) 
                 
                 // Fila de Ubicación/Asiento Combinada
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Weekend, null, tint = NovaColors.AccentPrimary, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.Weekend, null, tint = NovaColors.GoldPrimary, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(NovaSpacing.sm))
                     
                     val locationParts = mutableListOf<String>()
@@ -1318,7 +1326,7 @@ fun EmptyStateView(isSearch: Boolean) {
                 Icon(
                     Icons.Default.ConfirmationNumber,
                     contentDescription = null,
-                    tint = NovaColors.AccentPrimary,
+                    tint = NovaColors.GoldPrimary,
                     modifier = Modifier.size(64.dp)
                 )
             }

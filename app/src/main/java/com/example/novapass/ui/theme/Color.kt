@@ -7,29 +7,38 @@ import androidx.compose.ui.graphics.Color
 // ============================================================
 
 object NovaColors {
-    val BackgroundPrimary = Color(0xFF0B0F1A)
-    val BackgroundSecondary = Color(0xFF121826)
 
-    val GlassLight = Color.White.copy(alpha = 0.08f)
-    val GlassMedium = Color.White.copy(alpha = 0.12f)
-    val GlassStrong = Color.White.copy(alpha = 0.18f)
+    // 🔳 Base
+    val BackgroundPrimary = Color(0xFF0A0D14)
+    val BackgroundSecondary = Color(0xFF0F1422)
 
-    val BorderSubtle = Color.White.copy(alpha = 0.10f)
-    val BorderStrong = Color.White.copy(alpha = 0.20f)
+    // 🧊 Glass
+    val GlassLight = Color.White.copy(alpha = 0.06f)
+    val GlassMedium = Color.White.copy(alpha = 0.10f)
+    val GlassStrong = Color.White.copy(alpha = 0.14f)
 
-    val AccentPrimary = Color(0xFF6C8CFF)    // Blue Fintech 2026
-    val AccentSecondary = Color(0xFF9F7AEA)  // Purple Fintech 2026
+    // 🟡 Dorado (Primary Accent)
+    val GoldPrimary = Color(0xFFD4AF37)
+    val GoldSoft = Color(0xFFD4AF37).copy(alpha = 0.55f)
+    val GoldGlow = Color(0xFFD4AF37).copy(alpha = 0.22f)
 
-    val Success = Color(0xFF22C55E)
-    val Error = Color(0xFFEF4444)
+    // 🟢 Verde oscuro con tendencia a cyan (NO chillón)
+    val GreenPrimary = Color(0xFF1FAF9A)
+    val GreenSoft = Color(0xFF1FAF9A).copy(alpha = 0.45f)
+    val GreenGlow = Color(0xFF1FAF9A).copy(alpha = 0.18f)
 
-    val TextPrimary = Color.White.copy(alpha = 0.90f)
-    val TextSecondary = Color.White.copy(alpha = 0.60f)
+    // ✏️ Texto
+    val TextPrimary = Color.White.copy(alpha = 0.9f)
+    val TextSecondary = Color.White.copy(alpha = 0.6f)
+
+    // 🔲 Bordes
+    val BorderSubtle = Color.White.copy(alpha = 0.08f)
+    val BorderAccent = GoldSoft
 }
 
 // -- Legacy Mappings (Redirected to NovaColors) --
 val NovaBackground = NovaColors.BackgroundPrimary
-val NovaPrimary = NovaColors.AccentPrimary
+val NovaPrimary = NovaColors.GoldPrimary
 val NovaOnPrimary = NovaColors.BackgroundPrimary
 
 val NovaTextPrimary = NovaColors.TextPrimary
@@ -48,9 +57,9 @@ val NovaGlassBorder = NovaColors.BorderSubtle
 val NovaSurface = NovaColors.GlassMedium
 val NovaSurfaceVariant = NovaColors.GlassStrong
 val NovaInputBackground = NovaColors.GlassLight
-val NovaError = NovaColors.Error
+val NovaError = Color(0xFFEF4444)
 
-// -- Ambient Glow Assets (Alpha reduced as per rule) --
-val NovaGlowGreen = Color(0xFF2DCA8C).copy(alpha = 0.12f)
-val NovaGlowGold = Color(0xFFD4AF37).copy(alpha = 0.12f)
-val NovaGlowBlue = Color(0xFF1D3A5F).copy(alpha = 0.15f)
+// -- Ambient Glow Assets --
+val NovaGlowGreen = NovaColors.GreenGlow
+val NovaGlowGold = NovaColors.GoldGlow
+val NovaGlowBlue = Color(0xFF1FAF9A).copy(alpha = 0.18f) // Redirected to Green glow to match identity
