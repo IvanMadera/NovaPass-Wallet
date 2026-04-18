@@ -14,8 +14,8 @@ android {
         applicationId = "com.example.novapass"
         minSdk = 31
         targetSdk = 35
-        versionCode = 6
-        versionName = "2026.04.12.5"
+        versionCode = 7
+        versionName = "2026.04.18"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

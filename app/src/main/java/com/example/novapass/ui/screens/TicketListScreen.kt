@@ -8,6 +8,10 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.*
@@ -26,19 +30,29 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import android.graphics.Matrix as AndroidMatrix
+import android.graphics.SweepGradient as AndroidSweepGradient
+import android.graphics.Paint as AndroidPaint
+import androidx.compose.ui.graphics.toArgb
 import com.example.novapass.TicketViewModel
 import com.example.novapass.data.TicketEntity
 import com.example.novapass.models.ExtractedTicketData
 import com.example.novapass.ui.components.CustomInputField
 import com.example.novapass.ui.components.EmptyStateView
 import com.example.novapass.ui.components.TicketItem
+import com.example.novapass.ui.components.TicketViewerDialog
 import com.example.novapass.ui.theme.*
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.text.PDFTextStripper
@@ -56,8 +70,7 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun TicketListScreen(
     viewModel: TicketViewModel,
-    onTicketClick: (TicketEntity) -> Unit,
-    onAddTicket: (String, Uri, String, String?, String?, String?, String?, String?, String?, Int) -> Unit
+    onAddTicket: suspend (String, Uri, String, String?, String?, String?, String?, String?, String?, Int) -> Boolean
 ) {
     val context = LocalContext.current
     val view = LocalView.current
@@ -86,6 +99,7 @@ fun TicketListScreen(
     var selectedCategory by remember { mutableStateOf("Otro") }
     var selectedUri by remember { mutableStateOf<Uri?>(null) }
     var selectedFileName by remember { mutableStateOf("") }
+    var selectedTicketForView by remember { mutableStateOf<TicketEntity?>(null) }
     var currentPageIndex by remember { mutableIntStateOf(0) }
     val coroutineScope = rememberCoroutineScope()
     var isVerifying by remember { mutableStateOf(false) }
@@ -214,17 +228,52 @@ fun TicketListScreen(
                     modifier = Modifier.fillMaxWidth().padding(NovaSpacing.md),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Surface(
-                        color = Color.Transparent,
-                        shape = RoundedCornerShape(12.dp),
+                    // Animación de rotación infinita para el borde del logo
+                    val infiniteTransition = rememberInfiniteTransition(label = "logoBorder")
+                    val borderAngle by infiniteTransition.animateFloat(
+                        initialValue = 0f,
+                        targetValue = 360f,
+                        animationSpec = infiniteRepeatable(animation = tween(3000, easing = androidx.compose.animation.core.LinearEasing)),
+                        label = "borderRotation"
+                    )
+
+                    Box(
                         modifier = Modifier
                             .size(52.dp)
-                            .background(NovaColors.BackgroundSecondary, RoundedCornerShape(12.dp))
-                            .border(1.dp, Brush.linearGradient(listOf(NovaColors.GoldPrimary, NovaColors.GreenPrimary)), RoundedCornerShape(12.dp))
+                            .drawBehind {
+                                drawIntoCanvas { canvas: androidx.compose.ui.graphics.Canvas ->
+                                    val paint = AndroidPaint().apply {
+                                        isAntiAlias = true
+                                        style = AndroidPaint.Style.STROKE
+                                        strokeWidth = 2.dp.toPx()
+                                        
+                                        val colors = intArrayOf(
+                                            NovaColors.GoldPrimary.toArgb(),
+                                            NovaColors.GreenPrimary.toArgb(),
+                                            NovaColors.GoldPrimary.toArgb()
+                                        )
+                                        val shader = AndroidSweepGradient(
+                                            size.width / 2f,
+                                            size.height / 2f,
+                                            colors,
+                                            null
+                                        )
+                                        val matrix = AndroidMatrix()
+                                        matrix.postRotate(borderAngle, size.width / 2f, size.height / 2f)
+                                        shader.setLocalMatrix(matrix)
+                                        setShader(shader)
+                                    }
+                                    
+                                    val rect = android.graphics.RectF(0f, 0f, size.width, size.height)
+                                    val radius = 12.dp.toPx()
+                                    canvas.nativeCanvas.drawRoundRect(rect, radius, radius, paint)
+                                }
+                            }
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(NovaColors.BackgroundSecondary),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(Icons.Default.ConfirmationNumber, contentDescription = null, tint = NovaColors.GoldPrimary, modifier = Modifier.size(28.dp))
-                        }
+                        Icon(Icons.Default.ConfirmationNumber, contentDescription = null, tint = NovaColors.GoldPrimary, modifier = Modifier.size(28.dp))
                     }
                     Spacer(modifier = Modifier.width(NovaSpacing.md))
                     Column {
@@ -320,7 +369,7 @@ fun TicketListScreen(
                             contentPadding = PaddingValues(top = 12.dp, bottom = 80.dp)
                         ) {
                             items(filteredTickets) { ticket ->
-                                TicketItem(ticket = ticket, onClick = { onTicketClick(ticket) }, onDelete = { ticketToDelete = ticket })
+                                TicketItem(ticket = ticket, onClick = { selectedTicketForView = ticket }, onDelete = { ticketToDelete = ticket })
                             }
                         }
                     }
@@ -391,7 +440,7 @@ fun TicketListScreen(
                                     )
                                     Spacer(modifier = Modifier.width(NovaSpacing.md))
                                     Text(
-                                        if (selectedUri == null) "Toque para seleccionar PDF" else selectedFileName,
+                                        if (selectedUri == null) "Toque para seleccionar sus boletos" else selectedFileName,
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = if (selectedUri == null) NovaColors.TextSecondary else NovaColors.GoldPrimary,
                                         maxLines = 1
@@ -454,9 +503,9 @@ fun TicketListScreen(
                                                 }
                                                 Spacer(modifier = Modifier.height(8.dp))
                                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                                    CustomInputField(value = pTicket.section, onValueChange = { v -> val nl = pendingTickets.toMutableList(); nl[index] = pTicket.copy(section = v); pendingTickets = nl }, label = "Sec", placeholder = "Sec", modifier = Modifier.weight(1f))
-                                                    CustomInputField(value = pTicket.row, onValueChange = { v -> val nl = pendingTickets.toMutableList(); nl[index] = pTicket.copy(row = v); pendingTickets = nl }, label = "Fila", placeholder = "Fila", modifier = Modifier.weight(1f))
-                                                    CustomInputField(value = pTicket.seat, onValueChange = { v -> val nl = pendingTickets.toMutableList(); nl[index] = pTicket.copy(seat = v); pendingTickets = nl }, label = "Asiento", placeholder = "Asi", modifier = Modifier.weight(1f))
+                                                    CustomInputField(value = pTicket.section, onValueChange = { v -> val nl = pendingTickets.toMutableList(); nl[index] = pTicket.copy(section = v); pendingTickets = nl }, label = "Sec", placeholder = "Ej: 102", modifier = Modifier.weight(1f))
+                                                    CustomInputField(value = pTicket.row, onValueChange = { v -> val nl = pendingTickets.toMutableList(); nl[index] = pTicket.copy(row = v); pendingTickets = nl }, label = "Fila", placeholder = "Ej: A", modifier = Modifier.weight(1f))
+                                                    CustomInputField(value = pTicket.seat, onValueChange = { v -> val nl = pendingTickets.toMutableList(); nl[index] = pTicket.copy(seat = v); pendingTickets = nl }, label = "Asiento", placeholder = "Ej: 15", modifier = Modifier.weight(1f))
                                                 }
                                             }
                                         }
@@ -498,11 +547,11 @@ fun TicketListScreen(
                                 }
                                 Spacer(modifier = Modifier.height(16.dp))
                                 Row(modifier = Modifier.fillMaxWidth()) {
-                                    CustomInputField(value = section, onValueChange = { section = it }, label = "Sección", placeholder = "Sección", modifier = Modifier.weight(1f))
+                                    CustomInputField(value = section, onValueChange = { section = it }, label = "Sección", placeholder = "Ej: 102", modifier = Modifier.weight(1f))
                                     Spacer(modifier = Modifier.width(16.dp))
-                                    CustomInputField(value = row, onValueChange = { row = it }, label = "Fila", placeholder = "Fila", modifier = Modifier.weight(0.5f))
+                                    CustomInputField(value = row, onValueChange = { row = it }, label = "Fila", placeholder = "Ej: A", modifier = Modifier.weight(0.5f))
                                     Spacer(modifier = Modifier.width(16.dp))
-                                    CustomInputField(value = seat, onValueChange = { seat = it }, label = "Asiento", placeholder = "Asi", modifier = Modifier.weight(0.5f))
+                                    CustomInputField(value = seat, onValueChange = { seat = it }, label = "Asiento", placeholder = "Ej: 15", modifier = Modifier.weight(0.5f))
                                 }
                                 Spacer(modifier = Modifier.height(32.dp))
                             }
@@ -531,13 +580,34 @@ fun TicketListScreen(
                                                 try {
                                                     context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                                 } catch (e: Exception) { e.printStackTrace() }
+                                                
+                                                var addedCount = 0
+                                                var skippedCount = 0
+
                                                 if (pendingTickets.size > 1) {
                                                     pendingTickets.forEach { pTicket ->
-                                                        onAddTicket(pTicket.eventName, uri, pTicket.category, pTicket.date, pTicket.time, "", pTicket.section, pTicket.row, pTicket.seat, pTicket.pageIndex)
+                                                        val added = onAddTicket(pTicket.eventName, uri, pTicket.category, pTicket.date, pTicket.time, "", pTicket.section, pTicket.row, pTicket.seat, pTicket.pageIndex)
+                                                        if (added) addedCount++ else skippedCount++
                                                     }
                                                 } else {
-                                                    onAddTicket(ticketName, uri, selectedCategory, eventDate, eventTime, location, section, row, seat, currentPageIndex)
+                                                    val added = onAddTicket(ticketName, uri, selectedCategory, eventDate, eventTime, location, section, row, seat, currentPageIndex)
+                                                    if (added) addedCount++ else skippedCount++
                                                 }
+                                                
+                                                // Notificación de resultados
+                                                when {
+                                                    addedCount > 0 && skippedCount > 0 -> {
+                                                        Toast.makeText(context, "$addedCount boletos guardados, $skippedCount duplicados omitidos", Toast.LENGTH_LONG).show()
+                                                    }
+                                                    addedCount > 0 -> {
+                                                        Toast.makeText(context, if (addedCount == 1) "Boleto guardado exitosamente" else "$addedCount boletos guardados", Toast.LENGTH_SHORT).show()
+                                                    }
+                                                    skippedCount > 0 -> {
+                                                        val msg = if (skippedCount == 1) "El boleto ya existe en tu wallet" else "$skippedCount boletos ya existen en tu wallet"
+                                                        Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                                                    }
+                                                }
+                                                
                                                 showBottomSheet = false
                                             }
                                         }
@@ -617,6 +687,14 @@ fun TicketListScreen(
                 }
             }
         }
+    }
+
+    // DIÁLOGO DE VISUALIZACIÓN PREMIUM CENTRADA
+    selectedTicketForView?.let { ticket ->
+        TicketViewerDialog(
+            ticket = ticket,
+            onDismiss = { selectedTicketForView = null }
+        )
     }
 }
 
