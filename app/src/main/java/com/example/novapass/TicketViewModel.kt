@@ -22,7 +22,7 @@ class TicketViewModel(application: Application) : AndroidViewModel(application) 
             initialValue = emptyList()
         )
 
-    fun addTicket(
+    suspend fun addTicket(
         name: String,
         uri: Uri,
         category: String = "Otro",
@@ -33,23 +33,32 @@ class TicketViewModel(application: Application) : AndroidViewModel(application) 
         row: String? = null,
         seat: String? = null,
         pageIndex: Int = 0
-    ) {
-        viewModelScope.launch {
-            val newTicket = TicketEntity(
-                id = UUID.randomUUID().toString(),
-                name = name,
-                uri = uri.toString(),
-                category = category,
-                eventDate = eventDate,
-                eventTime = eventTime,
-                location = location,
-                section = section,
-                row = row,
-                seat = seat,
-                pageIndex = pageIndex
-            )
-            ticketDao.insertTicket(newTicket)
+    ): Boolean {
+        // Validación de duplicados: Fecha, Sección, Fila, Asiento
+        val isDuplicate = tickets.value.any { existing ->
+            existing.eventDate == eventDate &&
+            existing.section == section &&
+            existing.row == row &&
+            existing.seat == seat
         }
+
+        if (isDuplicate) return false
+
+        val newTicket = TicketEntity(
+            id = UUID.randomUUID().toString(),
+            name = name,
+            uri = uri.toString(),
+            category = category,
+            eventDate = eventDate,
+            eventTime = eventTime,
+            location = location,
+            section = section,
+            row = row,
+            seat = seat,
+            pageIndex = pageIndex
+        )
+        ticketDao.insertTicket(newTicket)
+        return true
     }
 
     fun removeTicket(ticket: TicketEntity) {

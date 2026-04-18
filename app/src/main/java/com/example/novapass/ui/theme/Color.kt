@@ -3,27 +3,84 @@ package com.example.novapass.ui.theme
 import androidx.compose.ui.graphics.Color
 
 // ============================================================
-// NovaPass Premium Design System — Color Tokens
-// ============================================
+// NovaPass Premium Design System — NovaColors System
+// ============================================================
 
-// -- Primary Background --
-val NovaBackground = Color(0xFF0B1220)      // Deep ambient navy
+object NovaColors {
 
-// -- Accents --
-val NovaPrimary = Color(0xFFE9C46A)         // Premium Gold Accent
-val NovaOnPrimary = Color(0xFF0B1220)       // Dark text on gold
+    // 🔳 Base
+    val BackgroundPrimary = Color(0xFF0A0D14)
+    val BackgroundSecondary = Color(0xFF0F1422)
 
-// -- Typography Hierarchy --
-val NovaOnBackground = Color(0xFFE6EDF3)    // Primary Text (High visibility)
-val NovaOnSurface = Color(0xFF8B9BB4)       // Secondary Text (Metadata/De-emphasized)
+    // 🧊 Glass
+    val GlassLight = Color.White.copy(alpha = 0.06f)
+    val GlassMedium = Color.White.copy(alpha = 0.10f)
+    val GlassStrong = Color.White.copy(alpha = 0.14f)
 
-// -- Functional Colors --
-val NovaSurface = Color(0xFF131A2E)         // Surface for modals/sheets
-val NovaSurfaceVariant = Color(0xFF1E2A40)  // Slightly lighter surface variant
-val NovaInputBackground = Color(0xFF0E1628) // Inside search bar
-val NovaError = Color(0xFFCF6679)           // Error state
+    // 🟡 Dorado (Primary Accent)
+    val GoldPrimary = Color(0xFFD4AF37)
+    val GoldSoft = Color(0xFFD4AF37).copy(alpha = 0.55f)
+    val GoldGlow = Color(0xFFD4AF37).copy(alpha = 0.22f)
 
-// -- Glow/Ambient Colors --
-val NovaGlowGreen = Color(0xFF2DCA8C)       // Top-left radial glow
-val NovaGlowGold = Color(0xFFE9C46A)        // Top-right radial glow
-val NovaGlowBlue = Color(0xFF1D3A5F)        // Background depth glow
+    // 🟢 Verde oscuro con tendencia a cyan (NO chillón)
+    val GreenPrimary = Color(0xFF1FAF9A)
+    val GreenSoft = Color(0xFF1FAF9A).copy(alpha = 0.45f)
+    val GreenGlow = Color(0xFF1FAF9A).copy(alpha = 0.18f)
+
+    // ✏️ Texto
+    val TextPrimary = Color.White.copy(alpha = 0.9f)
+    val TextSecondary = Color.White.copy(alpha = 0.6f)
+
+    // 🔲 Bordes
+    val BorderSubtle = Color.White.copy(alpha = 0.08f)
+    val BorderAccent = GoldSoft
+}
+
+// -- Legacy Mappings (Redirected to NovaColors) --
+val NovaBackground = NovaColors.BackgroundPrimary
+val NovaPrimary = NovaColors.GoldPrimary
+val NovaOnPrimary = NovaColors.BackgroundPrimary
+
+val NovaTextPrimary = NovaColors.TextPrimary
+val NovaTextSecondary = NovaColors.TextSecondary
+val NovaTextTertiary = Color.White.copy(alpha = 0.40f)
+
+val NovaOnBackground = NovaTextPrimary
+val NovaOnSurface = NovaTextSecondary
+
+val NovaGlassCard = NovaColors.GlassLight
+val NovaGlassSheet = NovaColors.GlassStrong
+val NovaGlassInputDefault = NovaColors.GlassLight
+val NovaGlassInputFocused = NovaColors.GlassMedium
+val NovaGlassBorder = NovaColors.BorderSubtle
+
+val NovaSurface = NovaColors.GlassMedium
+val NovaSurfaceVariant = NovaColors.GlassStrong
+val NovaInputBackground = NovaColors.GlassLight
+val NovaError = Color(0xFFEF4444)
+
+// -- Ambient Glow Assets --
+val NovaGlowGreen = NovaColors.GreenGlow
+val NovaGlowGold = NovaColors.GoldGlow
+val NovaGlowBlue = Color(0xFF1FAF9A).copy(alpha = 0.18f)
+
+// -- Premium Brushes & Shaders --
+object NovaBrushes {
+    val GoldGradient = androidx.compose.ui.graphics.Brush.linearGradient(
+        colors = listOf(
+            Color(0xFFFFEA9E), // Brillo inicial
+            NovaColors.GoldPrimary,
+            Color(0xFFB8860B), // Sombra/Profundidad
+            NovaColors.GoldPrimary
+        )
+    )
+
+    val GlassTopLight = androidx.compose.ui.graphics.Brush.verticalGradient(
+        colors = listOf(
+            Color.White.copy(alpha = 0.15f),
+            Color.Transparent
+        ),
+        startY = 0f,
+        endY = 40f
+    )
+}
