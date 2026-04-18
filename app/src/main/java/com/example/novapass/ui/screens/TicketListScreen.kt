@@ -191,7 +191,7 @@ fun TicketListScreen(
                         )
                     }
                     .background(
-                        brush = Brush.linearGradient(listOf(Color(0xFFFFEA9E), NovaColors.GoldPrimary)),
+                        brush = NovaBrushes.GoldGradient,
                         shape = CircleShape
                     )
                     .clickable(interactionSource = fabInteractionSource, indication = LocalIndication.current) {
@@ -323,8 +323,16 @@ fun TicketListScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .clip(RoundedCornerShape(20.dp))
                         .background(NovaInputBackground)
+                        .drawBehind {
+                            // Sombra sutil inferior para dar profundidad
+                            drawRect(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.15f)),
+                                    startY = size.height * 0.7f
+                                )
+                            )
+                        }
                         .border(1.dp, NovaGlassBorder, RoundedCornerShape(20.dp))
                 ) {
                     Box(
@@ -527,7 +535,7 @@ fun TicketListScreen(
                                         Box(
                                             modifier = Modifier
                                                 .clip(RoundedCornerShape(20.dp))
-                                                .background(if (isSelected) Brush.linearGradient(listOf(Color(0xFFFFEA9E), NovaColors.GoldPrimary)) else SolidColor(NovaColors.GlassLight))
+                                                .background(if (isSelected) NovaBrushes.GoldGradient else SolidColor(NovaColors.GlassLight))
                                                 .border(1.dp, if (isSelected) Color.Transparent else NovaColors.BorderSubtle, RoundedCornerShape(20.dp))
                                                 .clickable { selectedCategory = category }
                                                 .padding(horizontal = NovaSpacing.md, vertical = NovaSpacing.sm)
@@ -571,7 +579,7 @@ fun TicketListScreen(
                                     .graphicsLayer { scaleX = if (isEnabled) saveScale else 1f; scaleY = if (isEnabled) saveScale else 1f }
                                     .clip(RoundedCornerShape(20.dp))
                                     .then(
-                                        if (isEnabled) Modifier.background(Brush.linearGradient(listOf(Color(0xFFFFEA9E), NovaColors.GoldPrimary)))
+                                        if (isEnabled) Modifier.background(NovaBrushes.GoldGradient)
                                         else Modifier.background(NovaColors.GlassLight)
                                     )
                                     .clickable(enabled = isEnabled, interactionSource = saveInteractionSource, indication = LocalIndication.current) {

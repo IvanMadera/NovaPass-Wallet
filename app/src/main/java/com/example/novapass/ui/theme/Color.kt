@@ -62,4 +62,25 @@ val NovaError = Color(0xFFEF4444)
 // -- Ambient Glow Assets --
 val NovaGlowGreen = NovaColors.GreenGlow
 val NovaGlowGold = NovaColors.GoldGlow
-val NovaGlowBlue = Color(0xFF1FAF9A).copy(alpha = 0.18f) // Redirected to Green glow to match identity
+val NovaGlowBlue = Color(0xFF1FAF9A).copy(alpha = 0.18f)
+
+// -- Premium Brushes & Shaders --
+object NovaBrushes {
+    val GoldGradient = androidx.compose.ui.graphics.Brush.linearGradient(
+        colors = listOf(
+            Color(0xFFFFEA9E), // Brillo inicial
+            NovaColors.GoldPrimary,
+            Color(0xFFB8860B), // Sombra/Profundidad
+            NovaColors.GoldPrimary
+        )
+    )
+
+    val GlassTopLight = androidx.compose.ui.graphics.Brush.verticalGradient(
+        colors = listOf(
+            Color.White.copy(alpha = 0.15f),
+            Color.Transparent
+        ),
+        startY = 0f,
+        endY = 40f
+    )
+}

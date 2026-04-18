@@ -7,11 +7,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.novapass.ui.theme.NovaColors
-import com.example.novapass.ui.theme.NovaSpacing
+import com.example.novapass.ui.theme.*
 
 @Composable
 fun CustomInputField(
@@ -35,10 +36,15 @@ fun CustomInputField(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
+                .clip(RoundedCornerShape(20.dp))
+                .drawBehind {
+                    // Reflejo superior para efecto "tallado"
+                    drawRect(NovaBrushes.GlassTopLight)
+                }
                 .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
                 .border(
                     1.dp,
-                    Color.Transparent,
+                    Color.White.copy(alpha = 0.03f), // Borde fantasma
                     RoundedCornerShape(20.dp)
                 )
         ) {
@@ -52,7 +58,7 @@ fun CustomInputField(
                 enabled = enabled,
                 textStyle = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = NovaColors.GoldPrimary.copy(alpha = 0.5f),
+                    focusedBorderColor = NovaColors.GoldPrimary.copy(alpha = 0.4f),
                     unfocusedBorderColor = Color.Transparent,
                     focusedContainerColor = NovaColors.GlassMedium,
                     unfocusedContainerColor = NovaColors.GlassLight,

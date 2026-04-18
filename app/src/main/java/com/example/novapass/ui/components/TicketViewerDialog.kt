@@ -18,6 +18,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -189,17 +190,37 @@ fun TicketViewerDialog(
                     }
                     
                     // FOOTER
-                    Box(
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(NovaSpacing.md),
-                        contentAlignment = Alignment.Center
+                            .padding(top = NovaSpacing.sm, bottom = NovaSpacing.lg),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(
-                            "NovaPass Secure Viewer",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color.White.copy(alpha = 0.3f)
+                        Divider(
+                            modifier = Modifier
+                                .fillMaxWidth(0.6f)
+                                .alpha(0.08f),
+                            thickness = 1.dp,
+                            color = Color.White
                         )
+                        Spacer(modifier = Modifier.height(NovaSpacing.md))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.ConfirmationNumber,
+                                null,
+                                tint = Color.White.copy(alpha = 0.2f),
+                                modifier = Modifier.size(12.dp)
+                            )
+                            Spacer(modifier = Modifier.width(NovaSpacing.sm))
+                            Text(
+                                "NovaPass Secure Viewer".uppercase(),
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    letterSpacing = androidx.compose.ui.unit.TextUnit.Unspecified,
+                                    fontWeight = FontWeight.Light
+                                ),
+                                color = Color.White.copy(alpha = 0.25f)
+                            )
+                        }
                     }
                 }
             }
@@ -242,7 +263,9 @@ fun PdfDialogImage(
         Image(
             bitmap = bitmap!!.asImageBitmap(),
             contentDescription = "Ticket",
-            modifier = modifier.fillMaxWidth()
+            modifier = modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
         )
     } else {
         CircularProgressIndicator(color = NovaColors.GoldPrimary)
