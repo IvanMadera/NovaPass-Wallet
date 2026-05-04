@@ -43,32 +43,8 @@ fun NovaBackground(
     content: @Composable BoxScope.() -> Unit
 ) {
     Box(
-        modifier = modifier
-            .background(
-                Brush.radialGradient(
-                    colors = listOf(NovaColors.Black, NovaColors.BackgroundPrimary),
-                    center = Offset(0.5f, 0f), radius = 2000f
-                )
-            )
+        modifier = modifier.background(NovaColors.GreenBlack)
     ) {
-        Canvas(modifier = Modifier.matchParentSize().blur(150.dp)) {
-            // Oro Ámbar: Brillo superior limpio
-            drawCircle(
-                color = NovaColors.GoldPrimary.copy(alpha = 0.25f), 
-                radius = size.width * 1.0f, 
-                center = Offset(size.width * 0.95f, size.height * 0.1f),
-                blendMode = BlendMode.Plus
-            )
-
-            // La Joya Esmeralda: Profundidad y brillo original
-            drawCircle(
-                color = NovaColors.GreenDark.copy(alpha = 0.7f), 
-                radius = size.width * 1.1f, 
-                center = Offset(size.width * 0.0f, size.height * 0.95f),
-                blendMode = BlendMode.Screen
-            )
-        }
-        
         // El contenido encima del fondo
         Box(modifier = Modifier.fillMaxWidth()) {
             content()
@@ -85,32 +61,8 @@ fun NovaModalBackground(
     content: @Composable BoxScope.() -> Unit
 ) {
     Box(
-        modifier = modifier
-            .background(
-                Brush.radialGradient(
-                    colors = listOf(NovaColors.Black, NovaColors.BackgroundPrimary),
-                    center = Offset(0.5f, 0f), radius = 1000f
-                )
-            )
+        modifier = modifier.background(NovaColors.GreenBlack)
     ) {
-        Canvas(modifier = Modifier.matchParentSize().blur(110.dp)) {
-            // Oro Ámbar: Brillo superior (un poco más grande para cubrir esquinas)
-            drawCircle(
-                color = NovaColors.GoldPrimary.copy(alpha = 0.25f), 
-                radius = size.width * 0.85f, 
-                center = Offset(size.width * 1.1f, size.height * 0.1f),
-                blendMode = BlendMode.Plus
-            )
-
-            // La Joya Esmeralda: Profundidad (un poco más grande para cubrir esquinas)
-            drawCircle(
-                color = NovaColors.GreenDark.copy(alpha = 0.7f), 
-                radius = size.width * 0.85f, 
-                center = Offset(size.width * -0.2f, size.height * 0.95f),
-                blendMode = BlendMode.Screen
-            )
-        }
-        
         // El contenido encima del fondo
         Box(modifier = Modifier.fillMaxWidth()) {
             content()
@@ -369,7 +321,7 @@ fun TicketItem(ticket: TicketEntity, onClick: () -> Unit, onDelete: () -> Unit) 
                 Spacer(modifier = Modifier.height(NovaSpacing.sm))
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Weekend, null, tint = NovaColors.GoldPrimary, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.EventSeat, null, tint = NovaColors.GoldPrimary, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(NovaSpacing.sm))
                     val locationParts = mutableListOf<String>()
                     if (!ticket.section.isNullOrBlank()) locationParts.add("Sección ${ticket.section}")
@@ -378,7 +330,7 @@ fun TicketItem(ticket: TicketEntity, onClick: () -> Unit, onDelete: () -> Unit) 
                     val locationText = if (locationParts.isEmpty()) "Boleto Digital" else locationParts.joinToString(" | ")
                     Text(
                         locationText.uppercase(),
-                        style = MaterialTheme.typography.labelMedium,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = NovaColors.TextSecondary,
                         maxLines = 1
                     )

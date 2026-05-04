@@ -13,6 +13,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.novapass.ui.theme.*
 
 @Composable
@@ -45,11 +46,11 @@ fun CustomInputField(
                 value = value,
                 onValueChange = onValueChange,
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text(placeholder, color = NovaColors.TextSecondary, style = MaterialTheme.typography.bodyLarge) },
+                placeholder = { Text(placeholder, color = NovaColors.TextSecondary, style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp)) },
                 shape = RoundedCornerShape(20.dp),
                 readOnly = readOnly,
                 enabled = enabled,
-                textStyle = MaterialTheme.typography.bodyLarge.copy(color = NovaColors.White),
+                textStyle = MaterialTheme.typography.bodyLarge.copy(color = NovaColors.White, fontSize = 18.sp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedContainerColor = NovaColors.Transparent,
                     unfocusedContainerColor = NovaColors.Transparent,
