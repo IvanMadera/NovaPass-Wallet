@@ -12,17 +12,32 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
 private val NovaColorScheme = darkColorScheme(
-    primary = NovaPrimary,
-    secondary = NovaPrimary,
-    tertiary = NovaPrimary,
-    background = NovaBackground,
-    surface = NovaSurface,
-    surfaceVariant = NovaSurfaceVariant,
-    onPrimary = NovaOnPrimary,
-    onBackground = NovaOnBackground,
-    onSurface = NovaOnSurface,
-    onSurfaceVariant = NovaOnSurface,
-    error = NovaError
+    primary = NovaColors.GoldPrimary,
+    onPrimary = NovaColors.BackgroundPrimary,
+    primaryContainer = NovaColors.GoldPrimary,
+    onPrimaryContainer = NovaColors.BackgroundPrimary,
+    
+    secondary = NovaColors.GoldPrimary,
+    onSecondary = NovaColors.BackgroundPrimary,
+    secondaryContainer = NovaColors.GoldPrimary,
+    onSecondaryContainer = NovaColors.BackgroundPrimary,
+    
+    tertiary = NovaColors.GoldPrimary,
+    onTertiary = NovaColors.BackgroundPrimary,
+    
+    background = NovaColors.BackgroundPrimary,
+    onBackground = NovaColors.TextPrimary,
+    
+    surface = NovaColors.GlassMedium,
+    onSurface = NovaColors.TextPrimary,
+    surfaceVariant = NovaColors.GlassStrong,
+    onSurfaceVariant = NovaColors.TextSecondary,
+    surfaceTint = NovaColors.BackgroundPrimary,
+    
+    outline = NovaColors.BorderSubtle,
+    outlineVariant = NovaColors.BorderSubtle,
+    
+    error = NovaColors.Error
 )
 
 @Composable

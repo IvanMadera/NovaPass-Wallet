@@ -17,6 +17,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.*
@@ -32,6 +33,90 @@ import com.example.novapass.ui.theme.NovaColors
 import com.example.novapass.ui.theme.NovaSpacing
 import java.text.SimpleDateFormat
 import java.util.Locale
+
+// ──────────────────────────────────────────────────────────
+// NovaBackground — Fondo premium unificado para toda la app
+// ──────────────────────────────────────────────────────────
+@Composable
+fun NovaBackground(
+    modifier: Modifier = Modifier,
+    content: @Composable BoxScope.() -> Unit
+) {
+    Box(
+        modifier = modifier
+            .background(
+                Brush.radialGradient(
+                    colors = listOf(NovaColors.Black, NovaColors.BackgroundPrimary),
+                    center = Offset(0.5f, 0f), radius = 2000f
+                )
+            )
+    ) {
+        Canvas(modifier = Modifier.matchParentSize().blur(150.dp)) {
+            // Oro Ámbar: Brillo superior limpio
+            drawCircle(
+                color = NovaColors.GoldPrimary.copy(alpha = 0.25f), 
+                radius = size.width * 1.0f, 
+                center = Offset(size.width * 0.95f, size.height * 0.1f),
+                blendMode = BlendMode.Plus
+            )
+
+            // La Joya Esmeralda: Profundidad y brillo original
+            drawCircle(
+                color = NovaColors.GreenDark.copy(alpha = 0.7f), 
+                radius = size.width * 1.1f, 
+                center = Offset(size.width * 0.0f, size.height * 0.95f),
+                blendMode = BlendMode.Screen
+            )
+        }
+        
+        // El contenido encima del fondo
+        Box(modifier = Modifier.fillMaxWidth()) {
+            content()
+        }
+    }
+}
+
+// ──────────────────────────────────────────────────────────
+// NovaModalBackground — Fondo del home escalado para modales
+// ──────────────────────────────────────────────────────────
+@Composable
+fun NovaModalBackground(
+    modifier: Modifier = Modifier,
+    content: @Composable BoxScope.() -> Unit
+) {
+    Box(
+        modifier = modifier
+            .background(
+                Brush.radialGradient(
+                    colors = listOf(NovaColors.Black, NovaColors.BackgroundPrimary),
+                    center = Offset(0.5f, 0f), radius = 1000f
+                )
+            )
+    ) {
+        Canvas(modifier = Modifier.matchParentSize().blur(110.dp)) {
+            // Oro Ámbar: Brillo superior (un poco más grande para cubrir esquinas)
+            drawCircle(
+                color = NovaColors.GoldPrimary.copy(alpha = 0.25f), 
+                radius = size.width * 0.85f, 
+                center = Offset(size.width * 1.1f, size.height * 0.1f),
+                blendMode = BlendMode.Plus
+            )
+
+            // La Joya Esmeralda: Profundidad (un poco más grande para cubrir esquinas)
+            drawCircle(
+                color = NovaColors.GreenDark.copy(alpha = 0.7f), 
+                radius = size.width * 0.85f, 
+                center = Offset(size.width * -0.2f, size.height * 0.95f),
+                blendMode = BlendMode.Screen
+            )
+        }
+        
+        // El contenido encima del fondo
+        Box(modifier = Modifier.fillMaxWidth()) {
+            content()
+        }
+    }
+}
 
 // ──────────────────────────────────────────────────────────
 // GlassCard — base container reutilizable con borde sutil
@@ -184,7 +269,7 @@ fun TicketItem(ticket: TicketEntity, onClick: () -> Unit, onDelete: () -> Unit) 
                     Text(
                         text = ticket.name.uppercase(),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = Color.White,
+                        color = NovaColors.White,
                         maxLines = 2,
                         modifier = Modifier.weight(1f)
                     )
@@ -220,13 +305,13 @@ fun TicketItem(ticket: TicketEntity, onClick: () -> Unit, onDelete: () -> Unit) 
 
                 // 2. Limpiar las muescas circulares
                 drawCircle(
-                    color = Color.Black,
+                    color = NovaColors.Black,
                     radius = notchR,
                     center = Offset(0f, halfH),
                     blendMode = BlendMode.Clear
                 )
                 drawCircle(
-                    color = Color.Black,
+                    color = NovaColors.Black,
                     radius = notchR,
                     center = Offset(size.width, halfH),
                     blendMode = BlendMode.Clear
@@ -332,7 +417,7 @@ fun EmptyStateView(isSearch: Boolean) {
         Text(
             text = if (isSearch) "Sin coincidencias" else "Tu wallet está vacía",
             style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-            color = Color.White,
+            color = NovaColors.White,
             textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.height(NovaSpacing.sm))

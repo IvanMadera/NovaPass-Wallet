@@ -4,83 +4,68 @@ import androidx.compose.ui.graphics.Color
 
 // ============================================================
 // NovaPass Premium Design System — NovaColors System
+// Fuente única de verdad para todos los tokens de color.
+// Usa siempre NovaColors.* en código nuevo.
 // ============================================================
 
 object NovaColors {
 
     // 🔳 Base
-    val BackgroundPrimary = Color(0xFF0A0D14)
+    val White       = Color.White
+    val Black       = Color.Black
+    val Transparent = Color.Transparent
+
+    val BackgroundPrimary   = Color(0xFF0A0D14)
     val BackgroundSecondary = Color(0xFF0F1422)
+    val BackgroundAccent    = Color(0xFF1A1F35)
+    val NavBar              = Color(0xFF0D1117)
 
     // 🧊 Glass
-    val GlassLight = Color.White.copy(alpha = 0.06f)
-    val GlassMedium = Color.White.copy(alpha = 0.10f)
-    val GlassStrong = Color.White.copy(alpha = 0.14f)
+    val GlassLight  = White.copy(alpha = 0.06f)
+    val GlassMedium = White.copy(alpha = 0.10f)
+    val GlassStrong = White.copy(alpha = 0.14f)
 
-    // 🟡 Dorado (Primary Accent)
-    val GoldPrimary = Color(0xFFD4AF37)
-    val GoldSoft = Color(0xFFD4AF37).copy(alpha = 0.55f)
-    val GoldGlow = Color(0xFFD4AF37).copy(alpha = 0.22f)
+    // 🟡 Dorado (acento principal)
+    val GoldPrimary = Color(0xFFFFB700)
+    val GoldBright  = Color(0xFFFFEA9E)
+    val GoldDark    = Color(0xFFB8860B)
 
-    // 🟢 Verde oscuro con tendencia a cyan (NO chillón)
+    // 🟢 Verde/Cyan (acento secundario)
     val GreenPrimary = Color(0xFF1FAF9A)
-    val GreenSoft = Color(0xFF1FAF9A).copy(alpha = 0.45f)
-    val GreenGlow = Color(0xFF1FAF9A).copy(alpha = 0.18f)
+    val GreenDark    = Color(0xFF043927)
+    val GreenBlack   = Color(0xFF03261B)
+    val SapphireDark = Color(0xFF0D1B3E)
 
     // ✏️ Texto
-    val TextPrimary = Color.White.copy(alpha = 0.9f)
-    val TextSecondary = Color.White.copy(alpha = 0.6f)
+    val TextPrimary   = White.copy(alpha = 0.9f)
+    val TextSecondary = White.copy(alpha = 0.6f)
 
     // 🔲 Bordes
-    val BorderSubtle = Color.White.copy(alpha = 0.08f)
-    val BorderAccent = GoldSoft
+    val BorderSubtle = White.copy(alpha = 0.08f)
+
+    // ⚠️ Error
+    val Error = Color(0xFFEF4444)
+
+    // 🌑 Overlays
+    val Scrim = Black.copy(alpha = 0.6f)
 }
 
-// -- Legacy Mappings (Redirected to NovaColors) --
-val NovaBackground = NovaColors.BackgroundPrimary
-val NovaPrimary = NovaColors.GoldPrimary
-val NovaOnPrimary = NovaColors.BackgroundPrimary
-
-val NovaTextPrimary = NovaColors.TextPrimary
-val NovaTextSecondary = NovaColors.TextSecondary
-val NovaTextTertiary = Color.White.copy(alpha = 0.40f)
-
-val NovaOnBackground = NovaTextPrimary
-val NovaOnSurface = NovaTextSecondary
-
-val NovaGlassCard = NovaColors.GlassLight
-val NovaGlassSheet = NovaColors.GlassStrong
-val NovaGlassInputDefault = NovaColors.GlassLight
-val NovaGlassInputFocused = NovaColors.GlassMedium
-val NovaGlassBorder = NovaColors.BorderSubtle
-
-val NovaSurface = NovaColors.GlassMedium
-val NovaSurfaceVariant = NovaColors.GlassStrong
-val NovaInputBackground = NovaColors.GlassLight
-val NovaError = Color(0xFFEF4444)
-
-// -- Ambient Glow Assets --
-val NovaGlowGreen = NovaColors.GreenGlow
-val NovaGlowGold = NovaColors.GoldGlow
-val NovaGlowBlue = Color(0xFF1FAF9A).copy(alpha = 0.18f)
-
-// -- Premium Brushes & Shaders --
+// ─────────────────────────────────────────────────────────────────────────
+// Brushes premium reutilizables
+// ─────────────────────────────────────────────────────────────────────────
 object NovaBrushes {
     val GoldGradient = androidx.compose.ui.graphics.Brush.linearGradient(
         colors = listOf(
-            Color(0xFFFFEA9E), // Brillo inicial
+            NovaColors.GoldBright,
             NovaColors.GoldPrimary,
-            Color(0xFFB8860B), // Sombra/Profundidad
+            NovaColors.GoldDark,
             NovaColors.GoldPrimary
         )
     )
 
     val GlassTopLight = androidx.compose.ui.graphics.Brush.verticalGradient(
-        colors = listOf(
-            Color.White.copy(alpha = 0.15f),
-            Color.Transparent
-        ),
+        colors = listOf(NovaColors.White.copy(alpha = 0.15f), NovaColors.Transparent),
         startY = 0f,
-        endY = 40f
+        endY   = 40f
     )
 }
