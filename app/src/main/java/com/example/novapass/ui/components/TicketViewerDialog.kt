@@ -7,6 +7,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -94,18 +96,21 @@ fun TicketViewerDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.7f)),
-                contentAlignment = Alignment.Center
-            ) {
+        // Fondo oscuro unificado (Scrim)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(NovaColors.Scrim)
+                .clickable(onClick = onDismiss, indication = null, interactionSource = remember { MutableInteractionSource() }),
+            contentAlignment = Alignment.Center
+        ) {
             // GLASS CARD CONTAINER
             GlassCard(
                 showBorder = true,
                 modifier = Modifier
                     .fillMaxWidth(0.92f)
                     .fillMaxHeight(0.85f)
+                    .clickable(enabled = false) { } // Evitar que el clic en la tarjeta la cierre
             ) {
                 Column(modifier = Modifier.fillMaxSize()) {
                     // HEADER
@@ -129,7 +134,7 @@ fun TicketViewerDialog(
                             Text(
                                 ticket.name,
                                 style = MaterialTheme.typography.titleMedium,
-                                color = Color.White,
+                                color = NovaColors.White,
                                 fontWeight = FontWeight.Bold,
                                 maxLines = 1
                             )
@@ -140,7 +145,7 @@ fun TicketViewerDialog(
                             )
                         }
                         IconButton(onClick = onDismiss) {
-                            Icon(Icons.Default.Close, null, tint = Color.White.copy(alpha = 0.5f))
+                            Icon(Icons.Default.Close, null, tint = NovaColors.White.copy(alpha = 0.5f))
                         }
                     }
 
@@ -151,7 +156,7 @@ fun TicketViewerDialog(
                             .fillMaxWidth()
                             .padding(NovaSpacing.md)
                             .clip(RoundedCornerShape(12.dp))
-                            .background(Color.White.copy(alpha = 0.03f))
+                            .background(NovaColors.White.copy(alpha = 0.03f))
                             .transformable(state = transformableState),
                         contentAlignment = Alignment.Center
                     ) {
@@ -178,13 +183,13 @@ fun TicketViewerDialog(
                                 modifier = Modifier
                                     .align(Alignment.BottomCenter)
                                     .padding(NovaSpacing.md)
-                                    .background(Color.Black.copy(alpha = 0.4f), RoundedCornerShape(20.dp))
+                                    .background(NovaColors.Black.copy(alpha = 0.4f), RoundedCornerShape(20.dp))
                                     .padding(horizontal = 12.dp, vertical = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(Icons.Default.ZoomIn, null, tint = Color.White.copy(alpha = 0.7f), modifier = Modifier.size(16.dp))
+                                Icon(Icons.Default.ZoomIn, null, tint = NovaColors.White.copy(alpha = 0.7f), modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Pellizca para ampliar", color = Color.White.copy(alpha = 0.7f), style = MaterialTheme.typography.labelSmall)
+                                Text("Pellizca para ampliar", color = NovaColors.White.copy(alpha = 0.7f), style = MaterialTheme.typography.labelSmall)
                             }
                         }
                     }
@@ -201,14 +206,14 @@ fun TicketViewerDialog(
                                 .fillMaxWidth(0.6f)
                                 .alpha(0.08f),
                             thickness = 1.dp,
-                            color = Color.White
+                            color = NovaColors.White
                         )
                         Spacer(modifier = Modifier.height(NovaSpacing.md))
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 Icons.Default.ConfirmationNumber,
                                 null,
-                                tint = Color.White.copy(alpha = 0.2f),
+                                tint = NovaColors.White.copy(alpha = 0.2f),
                                 modifier = Modifier.size(12.dp)
                             )
                             Spacer(modifier = Modifier.width(NovaSpacing.sm))
@@ -218,7 +223,7 @@ fun TicketViewerDialog(
                                     letterSpacing = androidx.compose.ui.unit.TextUnit.Unspecified,
                                     fontWeight = FontWeight.Light
                                 ),
-                                color = Color.White.copy(alpha = 0.25f)
+                                color = NovaColors.White.copy(alpha = 0.25f)
                             )
                         }
                     }

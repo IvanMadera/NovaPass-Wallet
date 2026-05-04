@@ -2,24 +2,32 @@ package com.example.novapass.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.example.novapass.R
 
 // ============================================================
 // NovaPass Premium Design System — Typography
 // ============================================================
 
+val poppinsFamily = FontFamily(
+    Font(R.font.poppins_regular, FontWeight.Normal),
+    Font(R.font.poppins_medium, FontWeight.Medium),
+    Font(R.font.poppins_semibold, FontWeight.SemiBold)
+)
+
 val Typography = Typography(
     // Titles -> Semi-Bold
     headlineLarge = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = poppinsFamily,
         fontWeight = FontWeight.SemiBold,
         fontSize = 24.sp,
         letterSpacing = (-0.5).sp
     ),
     headlineMedium = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = poppinsFamily,
         fontWeight = FontWeight.SemiBold,
         fontSize = 20.sp,
         letterSpacing = (-0.5).sp
@@ -27,13 +35,13 @@ val Typography = Typography(
     
     // Subtitles -> Medium
     titleLarge = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = poppinsFamily,
         fontWeight = FontWeight.Medium,
         fontSize = 18.sp,
         letterSpacing = 0.sp
     ),
     titleMedium = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = poppinsFamily,
         fontWeight = FontWeight.Medium,
         fontSize = 16.sp,
         letterSpacing = 0.sp
@@ -41,14 +49,14 @@ val Typography = Typography(
     
     // Body -> Regular
     bodyLarge = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = poppinsFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp,
         lineHeight = 24.sp,
         letterSpacing = 0.5.sp
     ),
     bodyMedium = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = poppinsFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 14.sp,
         lineHeight = 20.sp,
@@ -57,12 +65,12 @@ val Typography = Typography(
     
     // Labels -> Medium/Regular
     labelLarge = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = poppinsFamily,
         fontWeight = FontWeight.Medium,
         fontSize = 14.sp
     ),
     labelMedium = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = poppinsFamily,
         fontWeight = FontWeight.Medium,
         fontSize = 12.sp
     )

@@ -153,11 +153,18 @@ class TicketViewModel(application: Application) : AndroidViewModel(application) 
         section: String?,  row: String?,       seat: String?,
         pageIndex: Int
     ): Boolean {
-        val isDuplicate = tickets.value.any { e ->
-            e.eventDate == eventDate && e.section == section &&
-            e.row == row && e.seat == seat
-        }
-        if (isDuplicate) return false
+        // Validación atómica directamente en la base de datos para evitar estados obsoletos del StateFlow
+        val duplicateCount = ticketDao.countDuplicates(
+            name = name,
+            eventDate = eventDate,
+            section = section,
+            row = row,
+            seat = seat,
+            uriString = uri.toString(),
+            pageIndex = pageIndex
+        )
+
+        if (duplicateCount > 0) return false
 
         ticketDao.insertTicket(
             TicketEntity(

@@ -34,6 +34,8 @@ import com.example.novapass.TicketViewModel
 import com.example.novapass.data.TicketEntity
 import com.example.novapass.ui.components.AddTicketBottomSheet
 import com.example.novapass.ui.components.EmptyStateView
+import com.example.novapass.ui.components.NovaBackground
+import com.example.novapass.ui.components.NovaModalBackground
 import com.example.novapass.ui.components.TicketItem
 import com.example.novapass.ui.components.TicketViewerDialog
 import com.example.novapass.ui.theme.*
@@ -97,7 +99,7 @@ fun TicketListScreen(viewModel: TicketViewModel) {
                     .drawBehind {
                         drawCircle(
                             brush  = Brush.radialGradient(
-                                colors = listOf(NovaColors.GoldPrimary.copy(alpha = 0.2f), Color.Transparent),
+                                colors = listOf(NovaColors.GoldPrimary.copy(alpha = 0.2f), NovaColors.Transparent),
                                 center = center, radius = size.width * 0.8f
                             ),
                             radius = size.width * 0.8f, center = center
@@ -113,27 +115,12 @@ fun TicketListScreen(viewModel: TicketViewModel) {
                 Icon(Icons.Default.Add, contentDescription = "Agregar boleto", modifier = Modifier.size(32.dp), tint = NovaColors.BackgroundPrimary)
             }
         },
-        containerColor = Color.Transparent
+        containerColor = NovaColors.Transparent
     ) { innerPadding ->
 
-        // ── Fondo con glows ────────────────────────────────────────────────
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.radialGradient(
-                        colors = listOf(Color(0xFF1A1F35), NovaColors.BackgroundPrimary),
-                        center = Offset(0.5f, 0f), radius = 2000f
-                    )
-                )
-        ) {
-            Canvas(modifier = Modifier.fillMaxSize().blur(140.dp)) {
-                drawCircle(color = NovaColors.GoldPrimary.copy(alpha = 0.12f),  radius = size.width * 0.9f, center = Offset(size.width * 0.9f, size.height * 0.1f))
-                drawCircle(color = NovaColors.GreenPrimary.copy(alpha = 0.18f), radius = size.width * 0.8f, center = Offset(size.width * 0.1f, size.height * 0.85f))
-            }
-
+        // ── Fondo con glows Unificado ──────────────────────────────────────
+        NovaBackground(modifier = Modifier.fillMaxSize()) {
             Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-
                 // ── Brand Header ───────────────────────────────────────────
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(NovaSpacing.md),
@@ -165,14 +152,15 @@ fun TicketListScreen(viewModel: TicketViewModel) {
                                 }
                             }
                             .clip(RoundedCornerShape(12.dp))
-                            .background(NovaColors.BackgroundSecondary),
+                            .background(NovaColors.GreenBlack)
+                            .border(1.dp, NovaColors.GoldPrimary.copy(alpha = 0.2f), RoundedCornerShape(12.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(Icons.Default.ConfirmationNumber, contentDescription = null, tint = NovaColors.GoldPrimary, modifier = Modifier.size(28.dp))
                     }
                     Spacer(modifier = Modifier.width(NovaSpacing.md))
                     Column {
-                        Text("NovaPass Wallet", style = MaterialTheme.typography.headlineMedium, color = Color.White)
+                        Text("NovaPass Wallet", style = MaterialTheme.typography.headlineMedium, color = NovaColors.White)
                         Text("${tickets.size} boletos", style = MaterialTheme.typography.bodyMedium, color = NovaColors.TextSecondary)
                     }
                 }
@@ -182,21 +170,24 @@ fun TicketListScreen(viewModel: TicketViewModel) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .background(NovaInputBackground)
-                        .border(1.dp, NovaGlassBorder, RoundedCornerShape(20.dp))
+                        .background(NovaColors.GlassLight, RoundedCornerShape(20.dp))
+                        .border(1.dp, NovaColors.BorderSubtle, RoundedCornerShape(20.dp))
                 ) {
                     OutlinedTextField(
                         value = searchQuery, onValueChange = { searchQuery = it },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("Buscar boletos...", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyLarge) },
-                        leadingIcon  = { Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                        placeholder = { Text("Buscar boletos...", color = NovaColors.TextSecondary, style = MaterialTheme.typography.bodyLarge) },
+                        leadingIcon  = { Icon(Icons.Default.Search, contentDescription = null, tint = NovaColors.GoldPrimary) },
                         shape = RoundedCornerShape(20.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor   = Color.Transparent, unfocusedContainerColor = Color.Transparent,
-                            focusedBorderColor      = Color.Transparent, unfocusedBorderColor    = Color.Transparent,
-                            cursorColor             = MaterialTheme.colorScheme.primary
+                            focusedContainerColor   = NovaColors.Transparent, 
+                            unfocusedContainerColor = NovaColors.Transparent,
+                            focusedBorderColor      = NovaColors.Transparent, 
+                            unfocusedBorderColor    = NovaColors.Transparent,
+                            cursorColor             = NovaColors.GoldPrimary
                         ),
-                        singleLine = true
+                        singleLine = true,
+                        textStyle = MaterialTheme.typography.bodyLarge.copy(color = NovaColors.White)
                     )
                 }
 
@@ -212,7 +203,7 @@ fun TicketListScreen(viewModel: TicketViewModel) {
                                 .drawWithContent {
                                     drawContent()
                                     drawRect(
-                                        brush = Brush.verticalGradient(colors = listOf(Color.Black, Color.Transparent), endY = 28.dp.toPx()),
+                                        brush = Brush.verticalGradient(colors = listOf(NovaColors.Black, NovaColors.Transparent), endY = 28.dp.toPx()),
                                         blendMode = BlendMode.DstOut
                                     )
                                 },
@@ -236,8 +227,8 @@ fun TicketListScreen(viewModel: TicketViewModel) {
             ModalBottomSheet(
                 onDismissRequest = { showBottomSheet = false },
                 sheetState       = sheetState,
-                containerColor   = NovaColors.BackgroundPrimary,
-                scrimColor       = Color.Black.copy(alpha = 0.6f),
+                containerColor   = Color.Transparent,
+                scrimColor       = NovaColors.Scrim,
                 dragHandle       = null,
                 tonalElevation   = 0.dp,
                 shape            = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
@@ -250,45 +241,101 @@ fun TicketListScreen(viewModel: TicketViewModel) {
             }
         }
 
-        // ── Confirmación Eliminar ─────────────────────────────────────────
+        // ── Confirmación Eliminar (Versión Premium Continua) ─────────────
         ticketToDelete?.let { ticket ->
-            AlertDialog(
+            androidx.compose.ui.window.Dialog(
                 onDismissRequest = { ticketToDelete = null },
-                containerColor   = NovaColors.BackgroundSecondary,
-                shape            = RoundedCornerShape(24.dp),
-                title = {
-                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        Text("Eliminar boleto", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold), color = Color.White)
-                    }
-                },
-                text = {
-                    Text("Esta acción no se puede deshacer. El boleto será eliminado permanentemente.",
-                        textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(alpha = 0.7f), modifier = Modifier.fillMaxWidth())
-                },
-                confirmButton = {
-                    Row(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        OutlinedButton(
-                            onClick = { ticketToDelete = null },
-                            modifier = Modifier.weight(1f).height(48.dp),
-                            border   = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f)),
-                            shape    = RoundedCornerShape(24.dp),
-                            colors   = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
-                        ) { Text("Cancelar", style = MaterialTheme.typography.labelLarge) }
-                        Button(
-                            onClick  = { viewModel.removeTicket(ticket); ticketToDelete = null },
-                            modifier = Modifier.weight(1f).height(48.dp),
-                            colors   = ButtonDefaults.buttonColors(containerColor = NovaColors.GoldPrimary),
-                            shape    = RoundedCornerShape(20.dp)
-                        ) { Text("Eliminar", color = NovaColors.BackgroundPrimary, style = MaterialTheme.typography.labelLarge) }
-                    }
+                properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+            ) {
+                // Fondo oscuro unificado (Scrim)
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(NovaColors.Scrim)
+                        .clickable(onClick = { ticketToDelete = null }, indication = null, interactionSource = remember { MutableInteractionSource() }),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.90f)
+                            .wrapContentHeight()
+                            .clip(RoundedCornerShape(28.dp))
+                            .clickable(enabled = false) { }
+                    ) {
+                        NovaModalBackground {
+                            Column(
+                                modifier = Modifier
+                                    .padding(NovaSpacing.lg)
+                                    .fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                            Surface(
+                                color = NovaColors.GoldPrimary.copy(alpha = 0.1f),
+                                shape = CircleShape,
+                                modifier = Modifier.size(56.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(Icons.Default.Delete, contentDescription = null, tint = NovaColors.GoldPrimary, modifier = Modifier.size(28.dp))
+                                }
+                            }
+                            
+                            Spacer(modifier = Modifier.height(NovaSpacing.md))
+                            
+                            Text(
+                                "¿Eliminar boleto?",
+                                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
+                                color = NovaColors.White,
+                                textAlign = TextAlign.Center
+                            )
+                            
+                            Spacer(modifier = Modifier.height(NovaSpacing.sm))
+                            
+                            Text(
+                                "Esta acción no se puede deshacer. El boleto será eliminado permanentemente de tu wallet.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = NovaColors.White.copy(alpha = 0.7f),
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(horizontal = NovaSpacing.sm)
+                            )
+                            
+                            Spacer(modifier = Modifier.height(NovaSpacing.xl))
+                            
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(NovaSpacing.md)
+                            ) {
+                                OutlinedButton(
+                                    onClick = { ticketToDelete = null },
+                                    modifier = Modifier.weight(1f).height(54.dp),
+                                    border   = BorderStroke(1.dp, NovaColors.White.copy(alpha = 0.1f)),
+                                    shape    = RoundedCornerShape(20.dp),
+                                    colors   = ButtonDefaults.outlinedButtonColors(contentColor = NovaColors.White)
+                                ) {
+                                    Text("Cancelar", style = MaterialTheme.typography.labelLarge)
+                                }
+                                
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(54.dp)
+                                        .clip(RoundedCornerShape(20.dp))
+                                        .background(NovaBrushes.GoldGradient)
+                                        .clickable { viewModel.removeTicket(ticket); ticketToDelete = null },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text("Eliminar", color = NovaColors.BackgroundPrimary, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    } // NovaModalBackground
                 }
-            )
+            }
         }
-    }
 
     // ── Visor PDF ──────────────────────────────────────────────────────────
     selectedTicketForView?.let { ticket ->
         TicketViewerDialog(ticket = ticket, onDismiss = { selectedTicketForView = null })
     }
+}
+}
 }
