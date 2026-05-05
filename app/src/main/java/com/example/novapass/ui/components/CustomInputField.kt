@@ -10,7 +10,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -38,30 +40,30 @@ fun CustomInputField(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(NovaColors.GlassLight, RoundedCornerShape(20.dp))
-                .border(1.dp, NovaColors.BorderSubtle, RoundedCornerShape(20.dp))
+                .background(NovaColors.GlassLight, RoundedCornerShape(16.dp))
+                .border(1.dp, NovaColors.BorderSubtle, RoundedCornerShape(16.dp))
                 .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
+                .padding(horizontal = 16.dp, vertical = 18.dp) // Más aire: 18dp
         ) {
-            OutlinedTextField(
+            BasicTextField(
                 value = value,
                 onValueChange = onValueChange,
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text(placeholder, color = NovaColors.TextSecondary, style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp)) },
-                shape = RoundedCornerShape(20.dp),
                 readOnly = readOnly,
                 enabled = enabled,
-                textStyle = MaterialTheme.typography.bodyLarge.copy(color = NovaColors.White, fontSize = 18.sp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = NovaColors.Transparent,
-                    unfocusedContainerColor = NovaColors.Transparent,
-                    disabledContainerColor = NovaColors.Transparent,
-                    focusedBorderColor = NovaColors.Transparent,
-                    unfocusedBorderColor = NovaColors.Transparent,
-                    disabledBorderColor = NovaColors.Transparent,
-                    cursorColor = NovaColors.GoldPrimary,
-                    disabledTextColor = NovaColors.TextSecondary
-                ),
-                singleLine = true
+                textStyle = MaterialTheme.typography.bodyMedium.copy(color = NovaColors.White, fontSize = 14.sp),
+                cursorBrush = SolidColor(NovaColors.GoldPrimary),
+                singleLine = true,
+                decorationBox = { innerTextField ->
+                    if (value.isEmpty()) {
+                        Text(
+                            placeholder,
+                            color = NovaColors.TextSecondary,
+                            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp)
+                        )
+                    }
+                    innerTextField()
+                }
             )
             // Overlay invisible para interceptar el clic si es readOnly y tiene onClick
             if (onClick != null) {

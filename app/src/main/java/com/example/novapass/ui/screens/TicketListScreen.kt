@@ -1,6 +1,8 @@
 package com.example.novapass.ui.screens
 
 import android.app.Activity
+import kotlinx.coroutines.launch
+import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -26,6 +28,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import android.graphics.Matrix as AndroidMatrix
 import android.graphics.SweepGradient as AndroidSweepGradient
 import android.graphics.Paint as AndroidPaint
@@ -70,6 +73,7 @@ fun TicketListScreen(viewModel: TicketViewModel) {
     var selectedTicketForView  by remember { mutableStateOf<TicketEntity?>(null) }
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope      = rememberCoroutineScope()
 
     val filteredTickets = remember(searchQuery, tickets) {
         val sdf  = java.text.SimpleDateFormat("EEEE, dd 'DE' MMMM 'DE' yyyy", java.util.Locale("es", "ES"))
@@ -170,15 +174,15 @@ fun TicketListScreen(viewModel: TicketViewModel) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .background(NovaColors.GlassLight, RoundedCornerShape(20.dp))
-                        .border(1.dp, NovaColors.BorderSubtle, RoundedCornerShape(20.dp))
+                        .background(NovaColors.GlassLight, RoundedCornerShape(16.dp))
+                        .border(1.dp, NovaColors.BorderSubtle, RoundedCornerShape(16.dp))
                 ) {
                     OutlinedTextField(
                         value = searchQuery, onValueChange = { searchQuery = it },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("Buscar boletos...", color = NovaColors.TextSecondary, style = MaterialTheme.typography.bodyLarge) },
+                        placeholder = { Text("Buscar boletos...", color = NovaColors.TextSecondary, style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp)) },
                         leadingIcon  = { Icon(Icons.Default.Search, contentDescription = null, tint = NovaColors.GoldPrimary) },
-                        shape = RoundedCornerShape(20.dp),
+                        shape = RoundedCornerShape(16.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedContainerColor   = NovaColors.Transparent, 
                             unfocusedContainerColor = NovaColors.Transparent,
@@ -187,34 +191,43 @@ fun TicketListScreen(viewModel: TicketViewModel) {
                             cursorColor             = NovaColors.GoldPrimary
                         ),
                         singleLine = true,
-                        textStyle = MaterialTheme.typography.bodyLarge.copy(color = NovaColors.White)
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(color = NovaColors.White, fontSize = 14.sp)
                     )
                 }
 
-                // ── Lista / Empty State ────────────────────────────────────
+                // ── Lista / Empty State con Transición ────────────────────
                 Box(modifier = Modifier.fillMaxSize()) {
-                    if (filteredTickets.isEmpty()) {
-                        EmptyStateView(isSearch = searchQuery.isNotEmpty())
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
-                                .drawWithContent {
-                                    drawContent()
-                                    drawRect(
-                                        brush = Brush.verticalGradient(colors = listOf(NovaColors.Black, NovaColors.Transparent), endY = 28.dp.toPx()),
-                                        blendMode = BlendMode.DstOut
+                    AnimatedContent(
+                        targetState = filteredTickets.isEmpty(),
+                        transitionSpec = {
+                            fadeIn(animationSpec = tween(400)) togetherWith 
+                            fadeOut(animationSpec = tween(300))
+                        },
+                        label = "listTransition"
+                    ) { isEmpty ->
+                        if (isEmpty) {
+                            EmptyStateView(isSearch = searchQuery.isNotEmpty())
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+                                    .drawWithContent {
+                                        drawContent()
+                                        drawRect(
+                                            brush = Brush.verticalGradient(colors = listOf(NovaColors.Black, NovaColors.Transparent), endY = 28.dp.toPx()),
+                                            blendMode = BlendMode.DstOut
+                                        )
+                                    },
+                                contentPadding = PaddingValues(top = 12.dp, bottom = 80.dp)
+                            ) {
+                                items(filteredTickets, key = { it.id }) { ticket ->
+                                    TicketItem(
+                                        ticket  = ticket,
+                                        onClick  = { selectedTicketForView = ticket },
+                                        onDelete = { ticketToDelete = ticket }
                                     )
-                                },
-                            contentPadding = PaddingValues(top = 12.dp, bottom = 80.dp)
-                        ) {
-                            items(filteredTickets) { ticket ->
-                                TicketItem(
-                                    ticket  = ticket,
-                                    onClick  = { selectedTicketForView = ticket },
-                                    onDelete = { ticketToDelete = ticket }
-                                )
+                                }
                             }
                         }
                     }
@@ -225,9 +238,13 @@ fun TicketListScreen(viewModel: TicketViewModel) {
         // ── Bottom Sheet ───────────────────────────────────────────────────
         if (showBottomSheet) {
             ModalBottomSheet(
-                onDismissRequest = { showBottomSheet = false },
+                onDismissRequest = { 
+                    scope.launch { sheetState.hide() }.invokeOnCompletion {
+                        if (!sheetState.isVisible) showBottomSheet = false
+                    }
+                },
                 sheetState       = sheetState,
-                containerColor   = Color.Transparent,
+                containerColor   = NovaColors.GreenBlack,
                 scrimColor       = NovaColors.Scrim,
                 dragHandle       = null,
                 tonalElevation   = 0.dp,
@@ -236,9 +253,20 @@ fun TicketListScreen(viewModel: TicketViewModel) {
                 AddTicketBottomSheet(
                     viewModel  = viewModel,
                     formState  = formState,
-                    onDismiss  = { showBottomSheet = false }
+                    onDismiss  = { 
+                    scope.launch { 
+                        sheetState.hide() 
+                    }.invokeOnCompletion {
+                        if (!sheetState.isVisible) showBottomSheet = false
+                    }
+                }
                 )
             }
+        }
+
+        // ── Visor PDF ──────────────────────────────────────────────────────────
+        selectedTicketForView?.let { ticket ->
+            TicketViewerDialog(ticket = ticket, onDismiss = { selectedTicketForView = null })
         }
 
         // ── Confirmación Eliminar (Versión Premium Continua) ─────────────
@@ -255,9 +283,16 @@ fun TicketListScreen(viewModel: TicketViewModel) {
                         .clickable(onClick = { ticketToDelete = null }, indication = null, interactionSource = remember { MutableInteractionSource() }),
                     contentAlignment = Alignment.Center
                 ) {
+                    val dialogScale by animateFloatAsState(
+                        targetValue = 1f,
+                        animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow),
+                        label = "dialogScale"
+                    )
+                    
                     Box(
                         modifier = Modifier
                             .fillMaxWidth(0.90f)
+                            .graphicsLayer { scaleX = dialogScale; scaleY = dialogScale }
                             .wrapContentHeight()
                             .clip(RoundedCornerShape(28.dp))
                             .clickable(enabled = false) { }
@@ -269,73 +304,73 @@ fun TicketListScreen(viewModel: TicketViewModel) {
                                     .fillMaxWidth(),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                            Surface(
-                                color = NovaColors.GoldPrimary.copy(alpha = 0.1f),
-                                shape = CircleShape,
-                                modifier = Modifier.size(56.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(Icons.Default.Delete, contentDescription = null, tint = NovaColors.GoldPrimary, modifier = Modifier.size(28.dp))
-                                }
-                            }
-                            
-                            Spacer(modifier = Modifier.height(NovaSpacing.md))
-                            
-                            Text(
-                                "¿Eliminar boleto?",
-                                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
-                                color = NovaColors.White,
-                                textAlign = TextAlign.Center
-                            )
-                            
-                            Spacer(modifier = Modifier.height(NovaSpacing.sm))
-                            
-                            Text(
-                                "Esta acción no se puede deshacer. El boleto será eliminado permanentemente de tu wallet.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = NovaColors.White.copy(alpha = 0.7f),
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(horizontal = NovaSpacing.sm)
-                            )
-                            
-                            Spacer(modifier = Modifier.height(NovaSpacing.xl))
-                            
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(NovaSpacing.md)
-                            ) {
-                                OutlinedButton(
-                                    onClick = { ticketToDelete = null },
-                                    modifier = Modifier.weight(1f).height(54.dp),
-                                    border   = BorderStroke(1.dp, NovaColors.White.copy(alpha = 0.1f)),
-                                    shape    = RoundedCornerShape(20.dp),
-                                    colors   = ButtonDefaults.outlinedButtonColors(contentColor = NovaColors.White)
-                                ) {
-                                    Text("Cancelar", style = MaterialTheme.typography.labelLarge)
-                                }
-                                
                                 Box(
                                     modifier = Modifier
-                                        .weight(1f)
-                                        .height(54.dp)
-                                        .clip(RoundedCornerShape(20.dp))
-                                        .background(NovaBrushes.GoldGradient)
-                                        .clickable { viewModel.removeTicket(ticket); ticketToDelete = null },
+                                        .size(64.dp)
+                                        .background(NovaColors.GoldPrimary.copy(alpha = 0.12f), CircleShape)
+                                        .border(1.5.dp, NovaColors.GoldPrimary.copy(alpha = 0.4f), CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text("Eliminar", color = NovaColors.BackgroundPrimary, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                                    Icon(
+                                        Icons.Default.Delete,
+                                        contentDescription = null,
+                                        tint = NovaColors.GoldPrimary,
+                                        modifier = Modifier.size(32.dp)
+                                    )
+                                }
+                                
+                                Spacer(modifier = Modifier.height(NovaSpacing.md))
+                                
+                                Text(
+                                    "¿Eliminar boleto?",
+                                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
+                                    color = NovaColors.White,
+                                    textAlign = TextAlign.Center
+                                )
+                                
+                                Spacer(modifier = Modifier.height(NovaSpacing.sm))
+                                
+                                Text(
+                                    "Esta acción no se puede deshacer. El boleto será eliminado permanentemente de tu wallet.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = NovaColors.White.copy(alpha = 0.7f),
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(horizontal = NovaSpacing.sm)
+                                )
+                                
+                                Spacer(modifier = Modifier.height(NovaSpacing.xl))
+                                
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(NovaSpacing.md)
+                                ) {
+                                    OutlinedButton(
+                                        onClick = { ticketToDelete = null },
+                                        modifier = Modifier.weight(1f).height(54.dp),
+                                        border   = BorderStroke(1.dp, NovaColors.White.copy(alpha = 0.1f)),
+                                        shape    = RoundedCornerShape(16.dp),
+                                        colors   = ButtonDefaults.outlinedButtonColors(contentColor = NovaColors.White)
+                                    ) {
+                                        Text("Cancelar", style = MaterialTheme.typography.labelLarge)
+                                    }
+                                    
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(54.dp)
+                                            .clip(RoundedCornerShape(16.dp))
+                                            .background(NovaBrushes.GoldGradient)
+                                            .clickable { viewModel.removeTicket(ticket); ticketToDelete = null },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text("Eliminar", color = NovaColors.BackgroundPrimary, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                                    }
                                 }
                             }
-                        }
-                    } // NovaModalBackground
+                        } // NovaModalBackground
+                    }
                 }
             }
         }
-
-    // ── Visor PDF ──────────────────────────────────────────────────────────
-    selectedTicketForView?.let { ticket ->
-        TicketViewerDialog(ticket = ticket, onDismiss = { selectedTicketForView = null })
     }
-}
-}
 }

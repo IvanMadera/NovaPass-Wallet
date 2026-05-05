@@ -5,9 +5,10 @@ import android.net.Uri
 import android.os.ParcelFileDescriptor
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -17,6 +18,8 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ConfirmationNumber
 import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material3.*
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,6 +39,7 @@ import com.example.novapass.data.TicketEntity
 import com.example.novapass.ui.theme.NovaColors
 import com.example.novapass.ui.theme.NovaSpacing
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -48,11 +52,6 @@ fun TicketViewerDialog(
     val context = LocalContext.current
     val uri = Uri.parse(ticket.uri)
     
-    var pdfRenderer by remember { mutableStateOf<PdfRenderer?>(null) }
-    var fileDescriptor by remember { mutableStateOf<ParcelFileDescriptor?>(null) }
-    var pageCount by remember { mutableIntStateOf(0) }
-    val renderMutex = remember { Mutex() }
-
     val density = LocalDensity.current
     val configuration = LocalConfiguration.current
     val screenWidthPx = with(density) { configuration.screenWidthDp.dp.toPx() }
@@ -74,18 +73,34 @@ fun TicketViewerDialog(
         }
     }
 
-    DisposableEffect(uri) {
-        try {
-            val fd = context.contentResolver.openFileDescriptor(uri, "r")
-            if (fd != null) {
-                fileDescriptor = fd
-                val renderer = PdfRenderer(fd)
-                pdfRenderer = renderer
-                pageCount = renderer.pageCount
+    // Carga asíncrona del PDF
+    var pdfRenderer by remember { mutableStateOf<PdfRenderer?>(null) }
+    var fileDescriptor by remember { mutableStateOf<ParcelFileDescriptor?>(null) }
+    var pageCount by remember { mutableIntStateOf(0) }
+    var isLoading by remember { mutableStateOf(true) }
+    val renderMutex = remember { Mutex() }
+
+    LaunchedEffect(ticket.uri) {
+        withContext(Dispatchers.IO) {
+            try {
+                val uri = Uri.parse(ticket.uri)
+                val fd = context.contentResolver.openFileDescriptor(uri, "r")
+                if (fd != null) {
+                    fileDescriptor = fd
+                    val renderer = PdfRenderer(fd)
+                    pdfRenderer = renderer
+                    pageCount = renderer.pageCount
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                isLoading = false
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
         }
+    }
+
+    // Limpieza al cerrar el diálogo
+    DisposableEffect(Unit) {
         onDispose {
             pdfRenderer?.close()
             fileDescriptor?.close()
@@ -96,65 +111,86 @@ fun TicketViewerDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        // Fondo oscuro unificado (Scrim)
+        // Fondo oscuro unificado (Scrim) con animación de entrada
+        val scrimAlpha by animateFloatAsState(targetValue = 1f, animationSpec = tween(400), label = "scrimAlpha")
+        
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .alpha(scrimAlpha)
                 .background(NovaColors.Scrim)
                 .clickable(onClick = onDismiss, indication = null, interactionSource = remember { MutableInteractionSource() }),
             contentAlignment = Alignment.Center
         ) {
-            // GLASS CARD CONTAINER
-            GlassCard(
-                showBorder = true,
+            // Animación de escala para la tarjeta
+            val cardScale by animateFloatAsState(
+                targetValue = 1f,
+                animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow),
+                label = "cardScale"
+            )
+
+            // ESTADO PARA OCULTAR HINT DE ZOOM
+            var showZoomHint by remember { mutableStateOf(true) }
+            LaunchedEffect(Unit) {
+                delay(5000)
+                showZoomHint = false
+            }
+
+            // CONTENEDOR SÓLIDO (VERDE OSCURO)
+            Box(
                 modifier = Modifier
                     .fillMaxWidth(0.92f)
                     .fillMaxHeight(0.85f)
-                    .clickable(enabled = false) { } // Evitar que el clic en la tarjeta la cierre
+                    .graphicsLayer { scaleX = cardScale; scaleY = cardScale }
+                    .background(NovaColors.GreenBlack, RoundedCornerShape(16.dp))
+                    .border(1.dp, NovaColors.GoldDark.copy(alpha = 0.4f), RoundedCornerShape(16.dp))
+                    .clickable(enabled = false) { }
             ) {
                 Column(modifier = Modifier.fillMaxSize()) {
-                    // HEADER
+                    // HEADER DISCRETO Y ELEGANTE
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(NovaSpacing.md),
+                            .padding(horizontal = NovaSpacing.md, vertical = NovaSpacing.md),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        // Icono pequeño y sutil
                         Surface(
                             color = NovaColors.GoldPrimary.copy(alpha = 0.1f),
                             shape = CircleShape,
-                            modifier = Modifier.size(40.dp)
+                            modifier = Modifier.size(36.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Icon(Icons.Default.ConfirmationNumber, null, tint = NovaColors.GoldPrimary, modifier = Modifier.size(20.dp))
+                                Icon(
+                                    Icons.Default.ConfirmationNumber, 
+                                    null, 
+                                    tint = NovaColors.GoldPrimary, 
+                                    modifier = Modifier.size(18.dp)
+                                )
                             }
                         }
+                        
                         Spacer(modifier = Modifier.width(NovaSpacing.md))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                ticket.name,
-                                style = MaterialTheme.typography.titleMedium,
-                                color = NovaColors.White,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 1
-                            )
-                            Text(
-                                "Visualización Premium",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = NovaColors.GoldPrimary.copy(alpha = 0.7f)
-                            )
-                        }
+                        
+                        Text(
+                            ticket.name,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = NovaColors.White,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.weight(1f)
+                        )
+                        
                         IconButton(onClick = onDismiss) {
-                            Icon(Icons.Default.Close, null, tint = NovaColors.White.copy(alpha = 0.5f))
+                            Icon(Icons.Default.Close, null, tint = NovaColors.White.copy(alpha = 0.3f))
                         }
                     }
 
-                    // PDF AREA
+                    // PDF AREA (Con más espacio vertical)
                     Box(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxWidth()
-                            .padding(NovaSpacing.md)
+                            .padding(horizontal = NovaSpacing.md, vertical = NovaSpacing.sm)
                             .clip(RoundedCornerShape(12.dp))
                             .background(NovaColors.White.copy(alpha = 0.03f))
                             .transformable(state = transformableState),
@@ -177,13 +213,17 @@ fun TicketViewerDialog(
                             CircularProgressIndicator(color = NovaColors.GoldPrimary)
                         }
                         
-                        // Hint de zoom
-                        if (scale == 1f) {
+                        // Hint de zoom animado y con temporizador
+                        androidx.compose.animation.AnimatedVisibility(
+                            visible = scale == 1f && showZoomHint,
+                            enter = fadeIn() + expandVertically(),
+                            exit = fadeOut() + shrinkVertically(),
+                            modifier = Modifier.align(Alignment.BottomCenter)
+                        ) {
                             Row(
                                 modifier = Modifier
-                                    .align(Alignment.BottomCenter)
                                     .padding(NovaSpacing.md)
-                                    .background(NovaColors.Black.copy(alpha = 0.4f), RoundedCornerShape(20.dp))
+                                    .background(NovaColors.Black.copy(alpha = 0.6f), RoundedCornerShape(16.dp))
                                     .padding(horizontal = 12.dp, vertical = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {

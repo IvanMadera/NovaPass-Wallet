@@ -4,8 +4,8 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.platform.LocalContext
@@ -47,6 +48,23 @@ fun AddTicketBottomSheet(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
+    val view    = androidx.compose.ui.platform.LocalView.current
+
+    // MIUI/Xiaomi Fix Definitivo: Encontrar la ventana del BottomSheet
+    SideEffect {
+        var parent = view.parent
+        while (parent != null && parent !is androidx.compose.ui.window.DialogWindowProvider) {
+            parent = parent.parent
+        }
+        
+        (parent as? androidx.compose.ui.window.DialogWindowProvider)?.window?.let { window ->
+            window.addFlags(android.view.WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+            window.navigationBarColor = NovaColors.GreenBlack.toArgb()
+            androidx.core.view.WindowCompat
+                .getInsetsController(window, view)
+                .isAppearanceLightNavigationBars = false
+        }
+    }
 
     // Pickers de fecha/hora (estado UI puro — no necesita sobrevivir al ViewModel)
     var showDatePicker           by remember { mutableStateOf(false) }
@@ -58,6 +76,13 @@ fun AddTicketBottomSheet(
     val datePickerState = rememberDatePickerState()
     val timePickerState = rememberTimePickerState(initialHour = 12, initialMinute = 0, is24Hour = false)
     val categories      = listOf("Concierto", "Cine", "Deportes", "Otro")
+
+    // Animación de entrada interna
+    var isVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { isVisible = true }
+    
+    val contentAlpha by animateFloatAsState(if (isVisible) 1f else 0f, animationSpec = tween(850), label = "contentAlpha")
+    val contentMove  by animateFloatAsState(if (isVisible) 0f else 60f, animationSpec = tween(850, easing = FastOutSlowInEasing), label = "contentMove")
 
     // Consumir eventos de un solo disparo del ViewModel
     LaunchedEffect(Unit) {
@@ -95,7 +120,14 @@ fun AddTicketBottomSheet(
     val isEnabled   = (formState.ticketName.isNotBlank() || formState.pendingTickets.isNotEmpty()) &&
                        formState.selectedUri != null && !formState.isVerifying
 
-    NovaBackground(modifier = Modifier.fillMaxWidth()) {
+    NovaBackground(
+        modifier = Modifier
+            .fillMaxWidth()
+            .graphicsLayer {
+                alpha = contentAlpha
+                translationY = contentMove
+            }
+    ) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
@@ -129,9 +161,9 @@ fun AddTicketBottomSheet(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(20.dp))
+                        .clip(RoundedCornerShape(16.dp))
                         .background(if (hasFile) NovaColors.GlassMedium else NovaColors.GlassLight)
-                        .border(1.dp, if (hasFile) NovaColors.GoldPrimary.copy(alpha = 0.5f) else NovaColors.BorderSubtle, RoundedCornerShape(20.dp))
+                        .border(1.dp, if (hasFile) NovaColors.GoldPrimary.copy(alpha = 0.5f) else NovaColors.BorderSubtle, RoundedCornerShape(16.dp))
                         .clickable { filePickerLauncher.launch(arrayOf("application/pdf")) }
                 ) {
                     Row(modifier = Modifier.padding(NovaSpacing.md), verticalAlignment = Alignment.CenterVertically) {
@@ -163,13 +195,14 @@ fun AddTicketBottomSheet(
 
                 itemsIndexed(formState.pendingTickets) { index, pTicket ->
                     val isEditing = editingTicketIndex == index
+
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = NovaSpacing.xs)
-                            .clip(RoundedCornerShape(20.dp))
+                            .clip(RoundedCornerShape(16.dp))
                             .background(if (isEditing) NovaColors.GlassMedium else NovaColors.GlassLight)
-                            .border(1.dp, if (isEditing) NovaColors.GoldPrimary.copy(alpha = 0.3f) else NovaColors.BorderSubtle, RoundedCornerShape(20.dp))
+                            .border(1.dp, if (isEditing) NovaColors.GoldPrimary.copy(alpha = 0.3f) else NovaColors.BorderSubtle, RoundedCornerShape(16.dp))
                             .clickable { editingTicketIndex = if (isEditing) null else index }
                     ) {
                         Column(modifier = Modifier.padding(NovaSpacing.md)) {
@@ -187,9 +220,13 @@ fun AddTicketBottomSheet(
                                 }
                                 Spacer(modifier = Modifier.width(NovaSpacing.md))
                                 Text(pTicket.eventName, modifier = Modifier.weight(1f), color = NovaColors.TextPrimary, fontWeight = FontWeight.Bold)
-                                Icon(if (isEditing) Icons.Default.KeyboardArrowUp else Icons.Default.Edit, contentDescription = null, tint = NovaColors.GoldPrimary.copy(alpha = 0.7f))
+                                Icon(if (isEditing) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown, contentDescription = null, tint = NovaColors.GoldPrimary.copy(alpha = 0.7f))
                             }
-                            AnimatedVisibility(visible = isEditing) {
+                            AnimatedVisibility(
+                                visible = isEditing,
+                                enter = expandVertically() + scaleIn(initialScale = 0.7f) + fadeIn(),
+                                exit = shrinkVertically() + scaleOut(targetScale = 0.7f) + fadeOut()
+                            ) {
                                 Column {
                                     Spacer(modifier = Modifier.height(NovaSpacing.md))
                                     CustomInputField(value = pTicket.eventName, onValueChange = { viewModel.updatePendingTicket(index, pTicket.copy(eventName = it)) }, label = "Evento", placeholder = "Nombre")
@@ -221,9 +258,9 @@ fun AddTicketBottomSheet(
                             val sel = formState.selectedCategory == cat
                             Box(
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(20.dp))
+                                    .clip(RoundedCornerShape(16.dp))
                                     .background(if (sel) NovaBrushes.GoldGradient else SolidColor(NovaColors.GlassLight))
-                                    .border(1.dp, if (sel) NovaColors.Transparent else NovaColors.BorderSubtle, RoundedCornerShape(20.dp))
+                                    .border(1.dp, if (sel) NovaColors.Transparent else NovaColors.BorderSubtle, RoundedCornerShape(16.dp))
                                     .clickable { viewModel.updateCategory(cat) }
                                     .padding(horizontal = NovaSpacing.md, vertical = NovaSpacing.sm)
                             ) {
@@ -259,7 +296,7 @@ fun AddTicketBottomSheet(
                         .fillMaxWidth()
                         .height(60.dp)
                         .graphicsLayer { scaleX = if (isEnabled) saveScale else 1f; scaleY = if (isEnabled) saveScale else 1f }
-                        .clip(RoundedCornerShape(20.dp))
+                        .clip(RoundedCornerShape(16.dp))
                         .then(if (isEnabled) Modifier.background(NovaBrushes.GoldGradient) else Modifier.background(NovaColors.GlassLight))
                         .clickable(enabled = isEnabled, interactionSource = saveInteractionSource, indication = LocalIndication.current) {
                             viewModel.saveTickets(context)

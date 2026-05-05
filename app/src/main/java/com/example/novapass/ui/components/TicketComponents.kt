@@ -1,6 +1,7 @@
 package com.example.novapass.ui.components
 
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
@@ -45,10 +46,7 @@ fun NovaBackground(
     Box(
         modifier = modifier.background(NovaColors.GreenBlack)
     ) {
-        // El contenido encima del fondo
-        Box(modifier = Modifier.fillMaxWidth()) {
-            content()
-        }
+        content()
     }
 }
 
@@ -109,9 +107,17 @@ fun TicketItem(ticket: TicketEntity, onClick: () -> Unit, onDelete: () -> Unit) 
         else        -> Icons.Default.ConfirmationNumber
     }
 
+    // Animaciones de Entrada y Pulsación
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(targetValue = if (isPressed) 0.97f else 1f, label = "ticketScale")
+    
+    // Animación de entrada (aparecer deslizando hacia arriba)
+    var isVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { isVisible = true }
+    
+    val entryAlpha by animateFloatAsState(if (isVisible) 1f else 0f, animationSpec = tween(500), label = "entryAlpha")
+    val entryTranslationY by animateFloatAsState(if (isVisible) 0f else 40f, animationSpec = tween(500, easing = FastOutSlowInEasing), label = "entryMove")
+    val scale by animateFloatAsState(if (isPressed) 0.98f else 1f, label = "ticketScale")
 
     // Seguimiento dinámico de alturas para el dibujo del borde
     var headerHeightPx by remember { mutableFloatStateOf(0f) }
@@ -124,6 +130,8 @@ fun TicketItem(ticket: TicketEntity, onClick: () -> Unit, onDelete: () -> Unit) 
             .padding(horizontal = NovaSpacing.md, vertical = NovaSpacing.sm)
             .graphicsLayer {
                 compositingStrategy = CompositingStrategy.Offscreen
+                alpha = entryAlpha
+                translationY = entryTranslationY
                 scaleX = scale
                 scaleY = scale
             }
@@ -195,8 +203,8 @@ fun TicketItem(ticket: TicketEntity, onClick: () -> Unit, onDelete: () -> Unit) 
                     .background(
                         Brush.verticalGradient(
                             colors = listOf(
-                                NovaColors.GoldPrimary.copy(alpha = 0.02f),
-                                NovaColors.GoldPrimary.copy(alpha = 0.08f)
+                                NovaColors.GoldDark.copy(alpha = 0.15f),
+                                NovaColors.GoldDark.copy(alpha = 0.35f)
                             )
                         )
                     )
@@ -251,7 +259,7 @@ fun TicketItem(ticket: TicketEntity, onClick: () -> Unit, onDelete: () -> Unit) 
                 
                 // 1. Limpiar el fondo del "carril" de perforación
                 drawRect(
-                    color = NovaColors.GoldPrimary.copy(alpha = 0.08f),
+                    color = NovaColors.GoldDark.copy(alpha = 0.35f),
                     size = Size(size.width, halfH)
                 )
 
