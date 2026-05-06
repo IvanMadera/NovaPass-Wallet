@@ -253,21 +253,11 @@ fun AddTicketBottomSheet(
                     // Categorías
                     Text("Categoría", style = MaterialTheme.typography.labelMedium, color = NovaColors.TextSecondary)
                     Spacer(modifier = Modifier.height(NovaSpacing.sm))
-                    Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(NovaSpacing.sm)) {
-                        categories.forEach { cat ->
-                            val sel = formState.selectedCategory == cat
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .background(if (sel) NovaBrushes.GoldGradient else SolidColor(NovaColors.GlassLight))
-                                    .border(1.dp, if (sel) NovaColors.Transparent else NovaColors.BorderSubtle, RoundedCornerShape(16.dp))
-                                    .clickable { viewModel.updateCategory(cat) }
-                                    .padding(horizontal = NovaSpacing.md, vertical = NovaSpacing.sm)
-                            ) {
-                                Text(cat, color = if (sel) NovaColors.BackgroundPrimary else NovaColors.TextSecondary, style = MaterialTheme.typography.labelLarge)
-                            }
-                        }
-                    }
+                    TicketCategorySelector(
+                        categories = categories,
+                        selectedCategory = formState.selectedCategory,
+                        onCategorySelected = viewModel::updateCategory
+                    )
                     Spacer(modifier = Modifier.height(NovaSpacing.lg))
 
                     CustomInputField(value = formState.ticketName, onValueChange = { viewModel.updateTicketName(it) }, label = "Nombre del evento *", placeholder = "Ej: Coldplay World Tour")

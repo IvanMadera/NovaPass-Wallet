@@ -25,7 +25,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
@@ -50,7 +49,6 @@ fun TicketViewerDialog(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
-    val uri = Uri.parse(ticket.uri)
     
     val density = LocalDensity.current
     val configuration = LocalConfiguration.current
@@ -77,7 +75,6 @@ fun TicketViewerDialog(
     var pdfRenderer by remember { mutableStateOf<PdfRenderer?>(null) }
     var fileDescriptor by remember { mutableStateOf<ParcelFileDescriptor?>(null) }
     var pageCount by remember { mutableIntStateOf(0) }
-    var isLoading by remember { mutableStateOf(true) }
     val renderMutex = remember { Mutex() }
 
     LaunchedEffect(ticket.uri) {
@@ -93,8 +90,6 @@ fun TicketViewerDialog(
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-            } finally {
-                isLoading = false
             }
         }
     }
@@ -210,7 +205,7 @@ fun TicketViewerDialog(
                                     )
                             )
                         } else {
-                            CircularProgressIndicator(color = NovaColors.GoldPrimary)
+                            TicketPdfLoadingPlaceholder()
                         }
                         
                         // Hint de zoom animado y con temporizador
@@ -313,6 +308,6 @@ fun PdfDialogImage(
                 .clip(RoundedCornerShape(8.dp))
         )
     } else {
-        CircularProgressIndicator(color = NovaColors.GoldPrimary)
+        TicketPdfLoadingPlaceholder()
     }
 }
