@@ -47,4 +47,8 @@ class TicketRepositoryImpl(
     override suspend fun deleteTicket(ticket: Ticket) {
         ticketDao.deleteTicket(ticket.toEntity())
     }
+
+    override suspend fun updateTicket(ticket: Ticket) {
+        ticketDao.insertTicket(ticket.toEntity())
+    }
 }

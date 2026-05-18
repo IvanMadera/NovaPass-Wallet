@@ -14,7 +14,8 @@ class TicketViewModelFactory(
                 observeTicketsUseCase = appContainer.observeTicketsUseCase,
                 importPdfTicketsUseCase = appContainer.importPdfTicketsUseCase,
                 saveTicketsUseCase = appContainer.saveTicketsUseCase,
-                deleteTicketUseCase = appContainer.deleteTicketUseCase
+                deleteTicketUseCase = appContainer.deleteTicketUseCase,
+                archiveTicketUseCase = appContainer.archiveTicketUseCase
             ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")

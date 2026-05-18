@@ -68,8 +68,8 @@ fun TicketViewerDialog(
         } else {
             val maxX = (screenWidthPx * 0.85f * scale - screenWidthPx * 0.85f) / 2f
             val maxY = (screenHeightPx * 0.7f * scale - screenHeightPx * 0.7f) / 2f
-            val newX = (offset.x + offsetChange.x * scale).coerceIn(-maxX, maxX)
-            val newY = (offset.y + offsetChange.y * scale).coerceIn(-maxY, maxY)
+            val newX = (offset.x + offsetChange.x).coerceIn(-maxX, maxX)
+            val newY = (offset.y + offsetChange.y).coerceIn(-maxY, maxY)
             offset = androidx.compose.ui.geometry.Offset(newX, newY)
         }
     }

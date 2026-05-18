@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -98,8 +99,9 @@ fun GlassCard(
 // ──────────────────────────────────────────────────────────
 // TicketItem — tarjeta premium de boleto en la lista
 // ──────────────────────────────────────────────────────────
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TicketItem(ticket: Ticket, onClick: () -> Unit, onDelete: () -> Unit) {
+fun TicketItem(ticket: Ticket, onClick: () -> Unit, onDelete: () -> Unit, onArchive: () -> Unit = {}) {
     val categoryIcon = when (ticket.category) {
         "Concierto" -> Icons.Default.MusicNote
         "Deportes"  -> Icons.Default.SportsBaseball
@@ -123,9 +125,41 @@ fun TicketItem(ticket: Ticket, onClick: () -> Unit, onDelete: () -> Unit) {
     var headerHeightPx by remember { mutableFloatStateOf(0f) }
     var midHeightPx by remember { mutableFloatStateOf(0f) }
 
-    GlassCard(
-        showBorder = false, // Desactivamos el borde automático para dibujarlo manualmente
-        modifier = Modifier
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { dismissValue ->
+            if (dismissValue == SwipeToDismissBoxValue.EndToStart) {
+                onArchive()
+            }
+            false // Siempre regresar la tarjeta a su posición original
+        }
+    )
+
+    SwipeToDismissBox(
+        state = dismissState,
+        enableDismissFromStartToEnd = false,
+        backgroundContent = {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = NovaSpacing.md, vertical = NovaSpacing.sm)
+                    .background(NovaColors.GoldPrimary.copy(alpha = 0.3f), RoundedCornerShape(20.dp))
+                    .padding(horizontal = 20.dp),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                Icon(
+                    if (ticket.isArchived) Icons.Default.Unarchive else Icons.Default.Archive,
+                    contentDescription = if (ticket.isArchived) "Desarchivar" else "Archivar",
+                    tint = NovaColors.White,
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+        }
+    ) {
+        // Envolvemos el GlassCard en un fondo opaco que se deslice junto con él
+        Box(modifier = Modifier.fillMaxWidth().background(NovaColors.GreenBlack, RoundedCornerShape(20.dp))) {
+        GlassCard(
+            showBorder = false, // Desactivamos el borde automático para dibujarlo manualmente
+            modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = NovaSpacing.md, vertical = NovaSpacing.sm)
             .graphicsLayer {
@@ -346,6 +380,8 @@ fun TicketItem(ticket: Ticket, onClick: () -> Unit, onDelete: () -> Unit) {
             }
         }
     }
+    }
+}
 }
 
 // ──────────────────────────────────────────────────────────

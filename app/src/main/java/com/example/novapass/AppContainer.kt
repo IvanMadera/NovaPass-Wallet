@@ -5,6 +5,7 @@ import com.example.novapass.data.local.AppDatabase
 import com.example.novapass.data.pdf.PdfTicketDataSource
 import com.example.novapass.data.repository.PdfTicketRepositoryImpl
 import com.example.novapass.data.repository.TicketRepositoryImpl
+import com.example.novapass.domain.usecase.ArchiveTicketUseCase
 import com.example.novapass.domain.usecase.DeleteTicketUseCase
 import com.example.novapass.domain.usecase.ImportPdfTicketsUseCase
 import com.example.novapass.domain.usecase.ObserveTicketsUseCase
@@ -20,4 +21,5 @@ class AppContainer(context: Context) {
     val importPdfTicketsUseCase = ImportPdfTicketsUseCase(pdfTicketRepository)
     val saveTicketsUseCase = SaveTicketsUseCase(ticketRepository)
     val deleteTicketUseCase = DeleteTicketUseCase(ticketRepository)
+    val archiveTicketUseCase = ArchiveTicketUseCase(ticketRepository)
 }

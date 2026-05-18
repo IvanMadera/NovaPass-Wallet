@@ -9,7 +9,10 @@ import com.example.novapass.domain.model.ExtractedTicketData
 import com.example.novapass.domain.model.ImportPdfResult
 import com.example.novapass.domain.model.Ticket
 import com.example.novapass.domain.model.TicketDraft
+import com.example.novapass.domain.usecase.ArchiveTicketUseCase
 import com.example.novapass.domain.usecase.DeleteTicketUseCase
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import com.example.novapass.domain.usecase.ImportPdfTicketsUseCase
 import com.example.novapass.domain.usecase.ObserveTicketsUseCase
 import com.example.novapass.domain.usecase.SaveTicketsUseCase
@@ -28,10 +31,18 @@ class TicketViewModel(
     observeTicketsUseCase: ObserveTicketsUseCase,
     private val importPdfTicketsUseCase: ImportPdfTicketsUseCase,
     private val saveTicketsUseCase: SaveTicketsUseCase,
-    private val deleteTicketUseCase: DeleteTicketUseCase
+    private val deleteTicketUseCase: DeleteTicketUseCase,
+    private val archiveTicketUseCase: ArchiveTicketUseCase
 ) : ViewModel() {
 
-    val tickets: StateFlow<List<Ticket>> = observeTicketsUseCase()
+    private val _isShowingArchived = MutableStateFlow(false)
+    val isShowingArchived: StateFlow<Boolean> = _isShowingArchived.asStateFlow()
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val tickets: StateFlow<List<Ticket>> = _isShowingArchived
+        .flatMapLatest { isArchived ->
+            observeTicketsUseCase(isArchived)
+        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
@@ -150,6 +161,16 @@ class TicketViewModel(
     fun removeTicket(ticket: Ticket) {
         viewModelScope.launch {
             deleteTicketUseCase(ticket)
+        }
+    }
+
+    fun toggleArchiveView() {
+        _isShowingArchived.value = !_isShowingArchived.value
+    }
+
+    fun archiveTicket(ticket: Ticket, archive: Boolean = true) {
+        viewModelScope.launch {
+            archiveTicketUseCase(ticket, archive)
         }
     }
 

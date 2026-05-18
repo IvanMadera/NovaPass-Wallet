@@ -18,7 +18,8 @@ fun TicketEntity.toDomain(): Ticket = Ticket(
     row = row,
     seat = seat,
     thumbnailPath = thumbnailPath,
-    pageIndex = pageIndex
+    pageIndex = pageIndex,
+    isArchived = isArchived
 )
 
 fun Ticket.toEntity(): TicketEntity = TicketEntity(
@@ -34,7 +35,8 @@ fun Ticket.toEntity(): TicketEntity = TicketEntity(
     row = row,
     seat = seat,
     thumbnailPath = thumbnailPath,
-    pageIndex = pageIndex
+    pageIndex = pageIndex,
+    isArchived = isArchived
 )
 
 fun TicketDraft.toEntity(): TicketEntity = TicketEntity(

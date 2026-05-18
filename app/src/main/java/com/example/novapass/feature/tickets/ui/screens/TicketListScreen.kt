@@ -16,6 +16,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.*
@@ -40,6 +42,7 @@ import com.example.novapass.feature.tickets.ui.components.AddTicketBottomSheet
 import com.example.novapass.feature.tickets.ui.components.EmptyStateView
 import com.example.novapass.feature.tickets.ui.components.NovaBackground
 import com.example.novapass.feature.tickets.ui.components.NovaModalBackground
+import com.example.novapass.feature.tickets.ui.components.DeveloperInfoDialog
 import com.example.novapass.feature.tickets.ui.components.TicketItem
 import com.example.novapass.feature.tickets.ui.components.TicketViewerDialog
 
@@ -65,6 +68,10 @@ fun TicketListScreen(viewModel: TicketViewModel) {
 
     val tickets     by viewModel.tickets.collectAsState()
     val formState   by viewModel.formState.collectAsState()
+    val isShowingArchived by viewModel.isShowingArchived.collectAsState()
+    var showEasterEgg by remember { mutableStateOf(false) }
+    var tapCount by remember { mutableIntStateOf(0) }
+    var lastTapTime by remember { mutableLongStateOf(0L) }
 
     // UI-only state
     var showBottomSheet        by remember { mutableStateOf(false) }
@@ -157,15 +164,72 @@ fun TicketListScreen(viewModel: TicketViewModel) {
                             }
                             .clip(RoundedCornerShape(12.dp))
                             .background(NovaColors.GreenBlack)
-                            .border(1.dp, NovaColors.GoldPrimary.copy(alpha = 0.2f), RoundedCornerShape(12.dp)),
+                            .border(1.dp, NovaColors.GoldPrimary.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) {
+                                val currentTime = System.currentTimeMillis()
+                                if (currentTime - lastTapTime < 500) {
+                                    tapCount++
+                                    if (tapCount >= 3) {
+                                        showEasterEgg = true
+                                        tapCount = 0
+                                    }
+                                } else {
+                                    tapCount = 1
+                                }
+                                lastTapTime = currentTime
+                            },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(Icons.Default.ConfirmationNumber, contentDescription = null, tint = NovaColors.GoldPrimary, modifier = Modifier.size(28.dp))
                     }
                     Spacer(modifier = Modifier.width(NovaSpacing.md))
-                    Column {
-                        Text("NovaPass Wallet", style = MaterialTheme.typography.headlineMedium, color = NovaColors.White)
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) {
+                                val currentTime = System.currentTimeMillis()
+                                if (currentTime - lastTapTime < 500) {
+                                    tapCount++
+                                    if (tapCount >= 3) {
+                                        showEasterEgg = true
+                                        tapCount = 0
+                                    }
+                                } else {
+                                    tapCount = 1
+                                }
+                                lastTapTime = currentTime
+                            }
+                    ) {
+                        AnimatedContent(targetState = isShowingArchived, label = "titleAnim") { archived ->
+                            Text(
+                                if (archived) "NovaPass Archivo" else "NovaPass Wallet", 
+                                style = MaterialTheme.typography.headlineMedium, 
+                                color = NovaColors.White
+                            )
+                        }
                         Text("${tickets.size} boletos", style = MaterialTheme.typography.bodyMedium, color = NovaColors.TextSecondary)
+                    }
+                    Box(
+                        modifier = Modifier
+                            .size(42.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(if (isShowingArchived) NovaColors.GoldPrimary.copy(alpha=0.15f) else NovaColors.GlassMedium)
+                            .border(1.dp, if (isShowingArchived) NovaColors.GoldPrimary.copy(alpha=0.5f) else NovaColors.BorderSubtle, RoundedCornerShape(12.dp))
+                            .clickable { viewModel.toggleArchiveView() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            if (isShowingArchived) Icons.Default.Inventory else Icons.Default.Inventory2,
+                            contentDescription = "Archivar",
+                            tint = if (isShowingArchived) NovaColors.GoldPrimary else NovaColors.TextSecondary,
+                            modifier = Modifier.size(24.dp)
+                        )
                     }
                 }
 
@@ -225,7 +289,8 @@ fun TicketListScreen(viewModel: TicketViewModel) {
                                     TicketItem(
                                         ticket  = ticket,
                                         onClick  = { selectedTicketForView = ticket },
-                                        onDelete = { ticketToDelete = ticket }
+                                        onDelete = { ticketToDelete = ticket },
+                                        onArchive = { viewModel.archiveTicket(ticket, archive = !isShowingArchived) }
                                     )
                                 }
                             }
@@ -371,6 +436,12 @@ fun TicketListScreen(viewModel: TicketViewModel) {
                     }
                 }
             }
+        }
+
+        if (showEasterEgg) {
+            DeveloperInfoDialog(
+                onDismiss = { showEasterEgg = false }
+            )
         }
     }
 }

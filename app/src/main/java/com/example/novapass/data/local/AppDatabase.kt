@@ -11,16 +11,17 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 // Migraciones Room — añade aquí objetos MIGRATION_X_Y al cambiar el schema.
 // Ejemplo: si agregas una columna en v4 →
 //
-//   val MIGRATION_3_4 = object : Migration(3, 4) {
-//       override fun migrate(db: SupportSQLiteDatabase) {
-//           db.execSQL("ALTER TABLE tickets ADD COLUMN myNewColumn TEXT")
-//       }
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE tickets ADD COLUMN isArchived INTEGER NOT NULL DEFAULT 0")
+    }
+}
 //   }
 //
 // y luego en getDatabase → .addMigrations(MIGRATION_3_4)
 // ─────────────────────────────────────────────────────────────────────────
 
-@Database(entities = [TicketEntity::class], version = 3, exportSchema = false)
+@Database(entities = [TicketEntity::class], version = 4, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun ticketDao(): TicketDao
 
@@ -37,6 +38,7 @@ abstract class AppDatabase : RoomDatabase() {
                 )
                 // NOTA: No usar fallbackToDestructiveMigration() en producción.
                 // Registra aquí todas las migraciones pendientes con addMigrations(…).
+                .addMigrations(MIGRATION_3_4)
                 .build()
                 INSTANCE = instance
                 instance

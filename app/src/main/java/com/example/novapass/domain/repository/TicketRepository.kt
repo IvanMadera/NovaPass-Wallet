@@ -9,4 +9,5 @@ interface TicketRepository {
     fun observeTickets(): Flow<List<Ticket>>
     suspend fun saveTickets(drafts: List<TicketDraft>): SaveTicketsResult
     suspend fun deleteTicket(ticket: Ticket)
+    suspend fun updateTicket(ticket: Ticket)
 }
