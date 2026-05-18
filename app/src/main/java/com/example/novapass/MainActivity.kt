@@ -5,8 +5,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.example.novapass.navigation.NovaPassNavGraph
-import com.example.novapass.ui.theme.NovaPassTheme
+import com.example.novapass.core.navigation.NovaPassNavGraph
+import com.example.novapass.core.design.theme.NovaPassTheme
 import androidx.compose.ui.graphics.toArgb
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 
@@ -15,7 +15,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         PDFBoxResourceLoader.init(applicationContext)
 
-        val navBarColor = com.example.novapass.ui.theme.NovaColors.NavBar.toArgb()
+        val navBarColor = com.example.novapass.core.design.theme.NovaColors.NavBar.toArgb()
 
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.auto(
