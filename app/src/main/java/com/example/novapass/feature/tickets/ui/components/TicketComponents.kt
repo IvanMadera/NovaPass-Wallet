@@ -30,9 +30,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.novapass.core.design.theme.NovaColors
 import com.example.novapass.core.design.theme.NovaSpacing
 import com.example.novapass.domain.model.Ticket
+import com.example.novapass.feature.tickets.ui.util.formatEventDate
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -113,12 +115,6 @@ fun TicketItem(ticket: Ticket, onClick: () -> Unit, onDelete: () -> Unit, onArch
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     
-    // Animación de entrada (aparecer deslizando hacia arriba)
-    var isVisible by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { isVisible = true }
-    
-    val entryAlpha by animateFloatAsState(if (isVisible) 1f else 0f, animationSpec = tween(500), label = "entryAlpha")
-    val entryTranslationY by animateFloatAsState(if (isVisible) 0f else 40f, animationSpec = tween(500, easing = FastOutSlowInEasing), label = "entryMove")
     val scale by animateFloatAsState(if (isPressed) 0.98f else 1f, label = "ticketScale")
 
     // Seguimiento dinámico de alturas para el dibujo del borde
@@ -131,7 +127,8 @@ fun TicketItem(ticket: Ticket, onClick: () -> Unit, onDelete: () -> Unit, onArch
                 onArchive()
             }
             false // Siempre regresar la tarjeta a su posición original
-        }
+        },
+        positionalThreshold = { distance -> distance * 0.7f } // Requiere deslizar al menos el 70% del ancho del boleto para confirmar
     )
 
     SwipeToDismissBox(
@@ -155,20 +152,21 @@ fun TicketItem(ticket: Ticket, onClick: () -> Unit, onDelete: () -> Unit, onArch
             }
         }
     ) {
-        // Envolvemos el GlassCard en un fondo opaco que se deslice junto con él
-        Box(modifier = Modifier.fillMaxWidth().background(NovaColors.GreenBlack, RoundedCornerShape(20.dp))) {
-        GlassCard(
-            showBorder = false, // Desactivamos el borde automático para dibujarlo manualmente
+        Box(
             modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = NovaSpacing.md, vertical = NovaSpacing.sm)
-            .graphicsLayer {
-                compositingStrategy = CompositingStrategy.Offscreen
-                alpha = entryAlpha
-                translationY = entryTranslationY
-                scaleX = scale
-                scaleY = scale
-            }
+                .fillMaxWidth()
+                .padding(horizontal = NovaSpacing.md, vertical = NovaSpacing.sm)
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                    shadowElevation = 12.dp.toPx()
+                    shape = RoundedCornerShape(20.dp)
+                    clip = false
+                    ambientShadowColor = Color(0xFF000000)
+                    spotShadowColor = Color(0xFF000000)
+                }
+                .clip(RoundedCornerShape(20.dp))
+                .background(NovaColors.GreenBlack)
             .drawWithContent {
                 drawContent()
                 
@@ -187,34 +185,22 @@ fun TicketItem(ticket: Ticket, onClick: () -> Unit, onDelete: () -> Unit, onArch
                     // 3. Esquina superior derecha
                     arcTo(Rect(size.width - cornerR * 2, 0f, size.width, cornerR * 2), 270f, 90f, false)
                     
-                    // 4. Lado derecho hasta la muesca
-                    lineTo(size.width, notchCenterY - notchRadius)
-                    
-                    // 5. Muesca derecha (arco invertido)
-                    arcTo(Rect(size.width - notchRadius, notchCenterY - notchRadius, size.width + notchRadius, notchCenterY + notchRadius), 270f, -180f, false)
-                    
-                    // 6. Lado derecho hasta el fondo
+                    // 4. Lado derecho
                     lineTo(size.width, size.height - cornerR)
                     
-                    // 7. Esquina inferior derecha
+                    // 5. Esquina inferior derecha
                     arcTo(Rect(size.width - cornerR * 2, size.height - cornerR * 2, size.width, size.height), 0f, 90f, false)
                     
-                    // 8. Borde inferior
+                    // 6. Borde inferior
                     lineTo(cornerR, size.height)
                     
-                    // 9. Esquina inferior izquierda
+                    // 7. Esquina inferior izquierda
                     arcTo(Rect(0f, size.height - cornerR * 2, cornerR * 2, size.height), 90f, 90f, false)
                     
-                    // 10. Lado izquierdo hasta la muesca
-                    lineTo(0f, notchCenterY + notchRadius)
-                    
-                    // 11. Muesca izquierda (arco invertido)
-                    arcTo(Rect(-notchRadius, notchCenterY - notchRadius, notchRadius, notchCenterY + notchRadius), 90f, -180f, false)
-                    
-                    // 12. Lado izquierdo hasta el tope
+                    // 8. Lado izquierdo
                     lineTo(0f, cornerR)
                     
-                    // 13. Esquina superior izquierda
+                    // 9. Esquina superior izquierda
                     arcTo(Rect(0f, 0f, cornerR * 2, cornerR * 2), 180f, 90f, false)
                     
                     close()
@@ -222,41 +208,38 @@ fun TicketItem(ticket: Ticket, onClick: () -> Unit, onDelete: () -> Unit, onArch
                 
                 drawPath(
                     path = ticketPath,
-                    color = NovaColors.BorderSubtle,
+                    color = NovaColors.GoldPrimary.copy(alpha = 0.3f),
                     style = Stroke(width = 2.dp.toPx())
                 )
             }
             .clickable(interactionSource = interactionSource, indication = LocalIndication.current) { onClick() }
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            // Header con glow sutil
+            // Header: fondo GreenDark + top-light de superficie
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .onSizeChanged { headerHeightPx = it.height.toFloat() }
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                NovaColors.GoldDark.copy(alpha = 0.10f),
-                                NovaColors.GoldDark.copy(alpha = 0.60f)
-                            )
-                        )
-                    )
-                    .padding(NovaSpacing.md)
+                    .background(NovaColors.GreenDark)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                // Contenido del header
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(NovaSpacing.md)
+                ) {
                     Box(
                         modifier = Modifier
-                            .size(40.dp)
-                            .background(NovaColors.GlassMedium, CircleShape)
-                            .border(1.dp, NovaColors.GoldPrimary.copy(alpha = 0.3f), CircleShape),
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(NovaColors.GreenBlack)
+                            .border(1.dp, NovaColors.GoldPrimary.copy(alpha = 0.70f), RoundedCornerShape(12.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             categoryIcon,
                             contentDescription = null,
                             tint = NovaColors.GoldPrimary,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(22.dp)
                         )
                     }
                     Spacer(modifier = Modifier.width(NovaSpacing.md))
@@ -279,6 +262,20 @@ fun TicketItem(ticket: Ticket, onClick: () -> Unit, onDelete: () -> Unit, onArch
                         )
                     }
                 }
+                // Top-light: luz de superficie sutil (no glassmorphism)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(32.dp)
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    NovaColors.White.copy(alpha = 0.05f),
+                                    NovaColors.Transparent
+                                )
+                            )
+                        )
+                )
             }
 
             // Perforación con BlendMode.Clear (efecto boleto físico)
@@ -293,47 +290,40 @@ fun TicketItem(ticket: Ticket, onClick: () -> Unit, onDelete: () -> Unit, onArch
                 
                 // 1. Limpiar el fondo del "carril" de perforación
                 drawRect(
-                    color = NovaColors.GoldDark.copy(alpha = 0.60f),
+                    color = NovaColors.GreenDark,
                     size = Size(size.width, halfH)
                 )
 
-                // 2. Limpiar las muescas circulares
-                drawCircle(
-                    color = NovaColors.Black,
-                    radius = notchR,
-                    center = Offset(0f, halfH),
-                    blendMode = BlendMode.Clear
-                )
-                drawCircle(
-                    color = NovaColors.Black,
-                    radius = notchR,
-                    center = Offset(size.width, halfH),
-                    blendMode = BlendMode.Clear
-                )
-                
                 // 3. Línea punteada premium
+                val dashLength = 6.dp.toPx()
+                val dashGap = 6.dp.toPx()
                 drawLine(
-                    color = NovaColors.BorderSubtle,
-                    start = Offset(notchR + 8.dp.toPx(), halfH),
-                    end = Offset(size.width - notchR - 8.dp.toPx(), halfH),
-                    strokeWidth = 1f,
-                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 12f), 0f)
+                    color = NovaColors.GoldPrimary.copy(alpha = 0.35f),
+                    start = Offset(16.dp.toPx(), halfH),
+                    end = Offset(size.width - 16.dp.toPx(), halfH),
+                    strokeWidth = 1.5.dp.toPx(),
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(dashLength, dashGap), 0f)
                 )
             }
 
-            // Body: fecha, hora, ubicación
+            // Body: fecha, hora, ubicación (fondo GreenBlack para separar visualmente del header)
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .background(NovaColors.GreenBlack)
                     .padding(start = NovaSpacing.md, end = NovaSpacing.md, bottom = NovaSpacing.md, top = 4.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Event, null, tint = NovaColors.GoldPrimary, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(NovaSpacing.sm))
+                    val formattedDate = remember(ticket.eventDate) {
+                        formatEventDate(ticket.eventDate)
+                    }
                     Text(
-                        ticket.eventDate ?: "Fecha TBD",
+                        formattedDate,
                         style = MaterialTheme.typography.bodyMedium,
                         color = NovaColors.TextSecondary,
+                        letterSpacing = 0.sp,
                         maxLines = 1,
                         modifier = Modifier.weight(1f)
                     )
@@ -380,7 +370,6 @@ fun TicketItem(ticket: Ticket, onClick: () -> Unit, onDelete: () -> Unit, onArch
             }
         }
     }
-    }
 }
 }
 
@@ -388,7 +377,7 @@ fun TicketItem(ticket: Ticket, onClick: () -> Unit, onDelete: () -> Unit, onArch
 // EmptyStateView — estado vacío de la lista
 // ──────────────────────────────────────────────────────────
 @Composable
-fun EmptyStateView(isSearch: Boolean) {
+fun EmptyStateView(isSearch: Boolean, isArchive: Boolean = false) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -402,7 +391,11 @@ fun EmptyStateView(isSearch: Boolean) {
         ) {
             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                 Icon(
-                    Icons.Default.ConfirmationNumber,
+                    imageVector = when {
+                        isSearch -> Icons.Default.ConfirmationNumber
+                        isArchive -> Icons.Default.Inventory
+                        else -> Icons.Default.ConfirmationNumber
+                    },
                     contentDescription = null,
                     tint = NovaColors.GoldPrimary,
                     modifier = Modifier.size(64.dp)
@@ -411,17 +404,22 @@ fun EmptyStateView(isSearch: Boolean) {
         }
         Spacer(modifier = Modifier.height(NovaSpacing.lg))
         Text(
-            text = if (isSearch) "Sin coincidencias" else "Tu wallet está vacía",
+            text = when {
+                isSearch -> "Sin coincidencias"
+                isArchive -> "Archivo vacío"
+                else -> "Tu wallet está vacía"
+            },
             style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
             color = NovaColors.White,
             textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.height(NovaSpacing.sm))
         Text(
-            text = if (isSearch)
-                "No encontramos boletos que coincidan con tu búsqueda."
-            else
-                "Agrega tu primer boleto tocando el botón de abajo",
+            text = when {
+                isSearch -> "No encontramos boletos que coincidan con tu búsqueda."
+                isArchive -> "Los boletos que archives aparecerán en esta sección."
+                else -> "Agrega tu primer boleto tocando el botón de abajo"
+            },
             style = MaterialTheme.typography.bodyMedium,
             color = NovaColors.TextSecondary,
             textAlign = TextAlign.Center

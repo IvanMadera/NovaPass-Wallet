@@ -43,6 +43,8 @@ import com.example.novapass.feature.tickets.ui.components.EmptyStateView
 import com.example.novapass.feature.tickets.ui.components.NovaBackground
 import com.example.novapass.feature.tickets.ui.components.NovaModalBackground
 import com.example.novapass.feature.tickets.ui.components.DeveloperInfoDialog
+import com.example.novapass.feature.tickets.ui.util.parseEventDate
+import com.example.novapass.feature.tickets.ui.util.formatEventDate
 import com.example.novapass.feature.tickets.ui.components.TicketItem
 import com.example.novapass.feature.tickets.ui.components.TicketViewerDialog
 
@@ -83,15 +85,17 @@ fun TicketListScreen(viewModel: TicketViewModel) {
     val scope      = rememberCoroutineScope()
 
     val filteredTickets = remember(searchQuery, tickets) {
-        val sdf  = java.text.SimpleDateFormat("EEEE, dd 'DE' MMMM 'DE' yyyy", java.util.Locale("es", "ES"))
         val list = if (searchQuery.isEmpty()) tickets
                    else tickets.filter { it.name.contains(searchQuery, ignoreCase = true) }
         list.sortedWith { t1, t2 ->
-            try {
-                val d1 = sdf.parse(t1.eventDate ?: "")
-                val d2 = sdf.parse(t2.eventDate ?: "")
-                d1?.compareTo(d2) ?: 0
-            } catch (e: Exception) { 0 }
+            val d1 = parseEventDate(t1.eventDate)
+            val d2 = parseEventDate(t2.eventDate)
+            when {
+                d1 == null && d2 == null -> 0
+                d1 == null -> 1
+                d2 == null -> -1
+                else -> d2.compareTo(d1) // Orden descendente (más reciente primero)
+            }
         }
     }
 
@@ -146,44 +150,69 @@ fun TicketListScreen(viewModel: TicketViewModel) {
                     Box(
                         modifier = Modifier
                             .size(52.dp)
-                            .drawBehind {
-                                drawIntoCanvas { canvas: Canvas ->
-                                    val paint = AndroidPaint().apply {
-                                        isAntiAlias = true
-                                        style       = AndroidPaint.Style.STROKE
-                                        strokeWidth = 2.dp.toPx()
-                                        val colors  = intArrayOf(NovaColors.GoldPrimary.toArgb(), NovaColors.GreenPrimary.toArgb(), NovaColors.GoldPrimary.toArgb())
-                                        val shader  = AndroidSweepGradient(size.width / 2f, size.height / 2f, colors, null)
-                                        val matrix  = AndroidMatrix()
-                                        matrix.postRotate(borderAngle, size.width / 2f, size.height / 2f)
-                                        shader.setLocalMatrix(matrix)
-                                        setShader(shader)
-                                    }
-                                    canvas.nativeCanvas.drawRoundRect(android.graphics.RectF(0f, 0f, size.width, size.height), 12.dp.toPx(), 12.dp.toPx(), paint)
-                                }
-                            }
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(NovaColors.GreenBlack)
-                            .border(1.dp, NovaColors.GoldPrimary.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null
-                            ) {
-                                val currentTime = System.currentTimeMillis()
-                                if (currentTime - lastTapTime < 500) {
-                                    tapCount++
-                                    if (tapCount >= 3) {
-                                        showEasterEgg = true
-                                        tapCount = 0
-                                    }
-                                } else {
-                                    tapCount = 1
-                                }
-                                lastTapTime = currentTime
+                            .graphicsLayer {
+                                shadowElevation = 12.dp.toPx()
+                                shape = RoundedCornerShape(12.dp)
+                                clip = false
+                                ambientShadowColor = Color(0xFF000000)
+                                spotShadowColor = Color(0xFF000000)
                             },
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Default.ConfirmationNumber, contentDescription = null, tint = NovaColors.GoldPrimary, modifier = Modifier.size(28.dp))
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .drawBehind {
+                                    drawIntoCanvas { canvas: Canvas ->
+                                        val paint = AndroidPaint().apply {
+                                            isAntiAlias = true
+                                            style       = AndroidPaint.Style.STROKE
+                                            strokeWidth = 2.dp.toPx()
+                                            val colors  = intArrayOf(NovaColors.GoldPrimary.toArgb(), NovaColors.GreenPrimary.toArgb(), NovaColors.GoldPrimary.toArgb())
+                                            val shader  = AndroidSweepGradient(size.width / 2f, size.height / 2f, colors, null)
+                                            val matrix  = AndroidMatrix()
+                                            matrix.postRotate(borderAngle, size.width / 2f, size.height / 2f)
+                                            shader.setLocalMatrix(matrix)
+                                            setShader(shader)
+                                        }
+                                        canvas.nativeCanvas.drawRoundRect(android.graphics.RectF(0f, 0f, size.width, size.height), 12.dp.toPx(), 12.dp.toPx(), paint)
+                                    }
+                                }
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(NovaColors.GreenBlack)
+                                .border(1.dp, NovaColors.GoldPrimary.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null
+                                ) {
+                                    val currentTime = System.currentTimeMillis()
+                                    if (currentTime - lastTapTime < 500) {
+                                        tapCount++
+                                        if (tapCount >= 3) {
+                                            showEasterEgg = true
+                                            tapCount = 0
+                                        }
+                                    } else {
+                                        tapCount = 1
+                                    }
+                                    lastTapTime = currentTime
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .matchParentSize()
+                                    .background(
+                                        Brush.verticalGradient(
+                                            colors = listOf(
+                                                NovaColors.White.copy(alpha = 0.04f),
+                                                NovaColors.Transparent
+                                            )
+                                        )
+                                    )
+                            )
+                            Icon(Icons.Default.ConfirmationNumber, contentDescription = null, tint = NovaColors.GoldPrimary, modifier = Modifier.size(28.dp))
+                        }
                     }
                     Spacer(modifier = Modifier.width(NovaSpacing.md))
                     Column(
@@ -218,17 +247,41 @@ fun TicketListScreen(viewModel: TicketViewModel) {
                     Box(
                         modifier = Modifier
                             .size(42.dp)
+                            .graphicsLayer {
+                                shadowElevation = 6.dp.toPx()
+                                shape = RoundedCornerShape(12.dp)
+                                clip = false
+                                ambientShadowColor = Color(0xFF000000)
+                                spotShadowColor = Color(0xFF000000)
+                            }
                             .clip(RoundedCornerShape(12.dp))
-                            .background(if (isShowingArchived) NovaColors.GoldPrimary.copy(alpha=0.15f) else NovaColors.GlassMedium)
-                            .border(1.dp, if (isShowingArchived) NovaColors.GoldPrimary.copy(alpha=0.5f) else NovaColors.BorderSubtle, RoundedCornerShape(12.dp))
+                            .background(NovaColors.GreenBlack)
+                            .border(
+                                1.dp,
+                                if (isShowingArchived) NovaColors.GoldPrimary.copy(alpha = 0.70f)
+                                else NovaColors.GoldPrimary.copy(alpha = 0.3f),
+                                RoundedCornerShape(12.dp)
+                            )
                             .clickable { viewModel.toggleArchiveView() },
                         contentAlignment = Alignment.Center
                     ) {
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .background(
+                                    Brush.verticalGradient(
+                                        colors = listOf(
+                                            NovaColors.White.copy(alpha = 0.04f),
+                                            NovaColors.Transparent
+                                        )
+                                    )
+                                )
+                        )
                         Icon(
                             if (isShowingArchived) Icons.Default.Inventory else Icons.Default.Inventory2,
                             contentDescription = "Archivar",
-                            tint = if (isShowingArchived) NovaColors.GoldPrimary else NovaColors.TextSecondary,
-                            modifier = Modifier.size(24.dp)
+                            tint = NovaColors.GoldPrimary,
+                            modifier = Modifier.size(22.dp)
                         )
                     }
                 }
@@ -238,8 +291,16 @@ fun TicketListScreen(viewModel: TicketViewModel) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .background(NovaColors.GlassLight, RoundedCornerShape(16.dp))
-                        .border(1.dp, NovaColors.BorderSubtle, RoundedCornerShape(16.dp))
+                        .graphicsLayer {
+                            shadowElevation = 8.dp.toPx()
+                            shape = RoundedCornerShape(16.dp)
+                            clip = false
+                            ambientShadowColor = Color(0xFF000000)
+                            spotShadowColor = Color(0xFF000000)
+                        }
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(NovaColors.GreenDark)
+                        .border(1.dp, NovaColors.GoldPrimary.copy(alpha = 0.3f), RoundedCornerShape(16.dp))
                 ) {
                     OutlinedTextField(
                         value = searchQuery, onValueChange = { searchQuery = it },
@@ -270,7 +331,10 @@ fun TicketListScreen(viewModel: TicketViewModel) {
                         label = "listTransition"
                     ) { isEmpty ->
                         if (isEmpty) {
-                            EmptyStateView(isSearch = searchQuery.isNotEmpty())
+                            EmptyStateView(
+                                isSearch = searchQuery.isNotEmpty(),
+                                isArchive = isShowingArchived
+                            )
                         } else {
                             LazyColumn(
                                 modifier = Modifier
@@ -356,24 +420,26 @@ fun TicketListScreen(viewModel: TicketViewModel) {
                     
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth(0.90f)
+                            .fillMaxWidth(0.80f)
                             .graphicsLayer { scaleX = dialogScale; scaleY = dialogScale }
                             .wrapContentHeight()
-                            .clip(RoundedCornerShape(28.dp))
+                            .clip(RoundedCornerShape(20.dp))
+                            .border(1.dp, NovaColors.GoldPrimary.copy(alpha = 0.3f), RoundedCornerShape(20.dp))
                             .clickable(enabled = false) { }
                     ) {
                         NovaModalBackground {
                             Column(
                                 modifier = Modifier
-                                    .padding(NovaSpacing.lg)
+                                    .padding(horizontal = 24.dp, vertical = 36.dp)
                                     .fillMaxWidth(),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Box(
                                     modifier = Modifier
                                         .size(64.dp)
-                                        .background(NovaColors.GoldPrimary.copy(alpha = 0.12f), CircleShape)
-                                        .border(1.5.dp, NovaColors.GoldPrimary.copy(alpha = 0.4f), CircleShape),
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(NovaColors.GoldPrimary.copy(alpha = 0.12f), RoundedCornerShape(12.dp))
+                                        .border(1.5.dp, NovaColors.GoldPrimary.copy(alpha = 0.4f), RoundedCornerShape(12.dp)),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
@@ -384,7 +450,7 @@ fun TicketListScreen(viewModel: TicketViewModel) {
                                     )
                                 }
                                 
-                                Spacer(modifier = Modifier.height(NovaSpacing.md))
+                                Spacer(modifier = Modifier.height(20.dp))
                                 
                                 Text(
                                     "¿Eliminar boleto?",
@@ -393,7 +459,7 @@ fun TicketListScreen(viewModel: TicketViewModel) {
                                     textAlign = TextAlign.Center
                                 )
                                 
-                                Spacer(modifier = Modifier.height(NovaSpacing.sm))
+                                Spacer(modifier = Modifier.height(16.dp))
                                 
                                 Text(
                                     "Esta acción no se puede deshacer. El boleto será eliminado permanentemente de tu wallet.",
@@ -403,7 +469,7 @@ fun TicketListScreen(viewModel: TicketViewModel) {
                                     modifier = Modifier.padding(horizontal = NovaSpacing.sm)
                                 )
                                 
-                                Spacer(modifier = Modifier.height(NovaSpacing.xl))
+                                Spacer(modifier = Modifier.height(32.dp))
                                 
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
@@ -445,3 +511,4 @@ fun TicketListScreen(viewModel: TicketViewModel) {
         }
     }
 }
+

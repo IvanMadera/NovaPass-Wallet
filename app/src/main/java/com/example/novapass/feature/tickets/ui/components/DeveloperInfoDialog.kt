@@ -1,9 +1,6 @@
 package com.example.novapass.feature.tickets.ui.components
 
 import android.content.Intent
-import android.graphics.Matrix as AndroidMatrix
-import android.graphics.Paint as AndroidPaint
-import android.graphics.SweepGradient as AndroidSweepGradient
 import android.net.Uri
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
@@ -24,12 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -73,55 +65,30 @@ fun DeveloperInfoDialog(onDismiss: () -> Unit) {
                 label = "dialogScale"
             )
 
-            // Borde rotativo dorado-verde
-            val infiniteTransition = rememberInfiniteTransition(label = "dialogBorder")
-            val borderAngle by infiniteTransition.animateFloat(
-                initialValue = 0f, targetValue = 360f,
-                animationSpec = infiniteRepeatable(animation = tween(3000, easing = LinearEasing)),
-                label = "borderRotation"
-            )
-
-            // Contenedor principal con borde rotativo + botón de cerrar superpuesto
+            // Contenedor principal para posicionar el botón de cerrar superpuesto (ancho 80%)
             Box(
                 modifier = Modifier
-                    .fillMaxWidth(0.85f)
+                    .fillMaxWidth(0.80f)
                     .graphicsLayer { scaleX = dialogScale; scaleY = dialogScale }
                     .wrapContentHeight()
+                    .clip(RoundedCornerShape(20.dp))
+                    .border(1.dp, NovaColors.GoldPrimary.copy(alpha = 0.3f), RoundedCornerShape(20.dp))
+                    .clickable(enabled = false) { }
             ) {
-                // Modal con borde rotativo
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .drawBehind {
-                            drawIntoCanvas { canvas: Canvas ->
-                                val paint = AndroidPaint().apply {
-                                    isAntiAlias = true
-                                    style = AndroidPaint.Style.STROKE
-                                    strokeWidth = 2.dp.toPx()
-                                    val colors = intArrayOf(
-                                        NovaColors.GoldPrimary.toArgb(),
-                                        NovaColors.GreenPrimary.toArgb(),
-                                        NovaColors.GoldPrimary.toArgb()
-                                    )
-                                    val shader = AndroidSweepGradient(
-                                        size.width / 2f, size.height / 2f, colors, null
-                                    )
-                                    val matrix = AndroidMatrix()
-                                    matrix.postRotate(borderAngle, size.width / 2f, size.height / 2f)
-                                    shader.setLocalMatrix(matrix)
-                                    setShader(shader)
-                                }
-                                val cornerPx = 28.dp.toPx()
-                                canvas.nativeCanvas.drawRoundRect(
-                                    android.graphics.RectF(0f, 0f, size.width, size.height),
-                                    cornerPx, cornerPx, paint
-                                )
-                            }
+                NovaModalBackground {
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        IconButton(
+                            onClick = onDismiss,
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(NovaSpacing.sm)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Cerrar",
+                                tint = NovaColors.White.copy(alpha = 0.3f)
+                            )
                         }
-                        .clip(RoundedCornerShape(28.dp))
-                        .clickable(enabled = false) { }
-                ) {
-                    NovaModalBackground {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -132,9 +99,9 @@ fun DeveloperInfoDialog(onDismiss: () -> Unit) {
                             Box(
                                 modifier = Modifier
                                     .size(72.dp)
-                                    .clip(CircleShape)
+                                    .clip(RoundedCornerShape(16.dp))
                                     .background(NovaColors.GoldPrimary.copy(alpha = 0.12f))
-                                    .border(1.5.dp, NovaColors.GoldPrimary.copy(alpha = 0.4f), CircleShape),
+                                    .border(1.5.dp, NovaColors.GoldPrimary.copy(alpha = 0.4f), RoundedCornerShape(16.dp)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
@@ -218,26 +185,6 @@ fun DeveloperInfoDialog(onDismiss: () -> Unit) {
                             )
                         }
                     }
-                }
-
-                // ── Botón de cerrar (X) superpuesto en la esquina ────
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .offset(x = 8.dp, y = (-8).dp)
-                        .size(32.dp)
-                        .clip(CircleShape)
-                        .background(NovaColors.GreenBlack)
-                        .border(1.dp, NovaColors.GoldPrimary.copy(alpha = 0.5f), CircleShape)
-                        .clickable { onDismiss() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.Default.Close,
-                        contentDescription = "Cerrar",
-                        tint = NovaColors.GoldPrimary,
-                        modifier = Modifier.size(16.dp)
-                    )
                 }
             }
         }

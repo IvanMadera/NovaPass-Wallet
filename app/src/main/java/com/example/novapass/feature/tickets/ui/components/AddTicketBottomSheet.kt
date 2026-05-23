@@ -148,7 +148,11 @@ fun AddTicketBottomSheet(
             item {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Text("Detalles del Evento", style = MaterialTheme.typography.headlineMedium, color = NovaColors.White)
-                    IconButton(onClick = { viewModel.resetForm(); onDismiss() }, modifier = Modifier.background(NovaColors.GlassMedium, CircleShape)) {
+                    IconButton(
+                        onClick = { viewModel.resetForm(); onDismiss() },
+                        modifier = Modifier
+                            .background(NovaColors.GlassMedium, CircleShape)
+                    ) {
                         Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = NovaColors.White.copy(alpha = 0.7f))
                     }
                 }
@@ -211,10 +215,10 @@ fun AddTicketBottomSheet(
                             Row(modifier = Modifier.fillMaxWidth().padding(NovaSpacing.sm), verticalAlignment = Alignment.CenterVertically) {
                                 Surface(
                                     color = if (isEditing) NovaColors.GoldPrimary else NovaColors.GreenBlack, 
-                                    shape = CircleShape, 
+                                    shape = RoundedCornerShape(8.dp), 
                                     modifier = Modifier
                                         .size(36.dp)
-                                        .border(1.dp, if (isEditing) NovaColors.Transparent else NovaColors.GoldPrimary.copy(alpha = 0.2f), CircleShape)
+                                        .border(1.dp, if (isEditing) NovaColors.Transparent else NovaColors.GoldPrimary.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         Text("${index + 1}", color = if (isEditing) NovaColors.BackgroundPrimary else NovaColors.GoldPrimary, fontWeight = FontWeight.Bold)

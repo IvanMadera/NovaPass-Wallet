@@ -143,7 +143,7 @@ fun TicketViewerDialog(
                     .fillMaxHeight(0.85f)
                     .graphicsLayer { scaleX = cardScale; scaleY = cardScale }
                     .background(NovaColors.GreenBlack, RoundedCornerShape(16.dp))
-                    .border(1.dp, NovaColors.GoldDark.copy(alpha = 0.4f), RoundedCornerShape(16.dp))
+                    .border(1.dp, NovaColors.GoldPrimary.copy(alpha = 0.3f), RoundedCornerShape(16.dp))
                     .clickable(enabled = false) { }
             ) {
                 Column(modifier = Modifier.fillMaxSize()) {
@@ -156,9 +156,11 @@ fun TicketViewerDialog(
                     ) {
                         // Icono pequeño y sutil
                         Surface(
-                            color = NovaColors.GoldPrimary.copy(alpha = 0.1f),
-                            shape = CircleShape,
-                            modifier = Modifier.size(36.dp)
+                            color = NovaColors.GoldPrimary.copy(alpha = 0.12f),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier
+                                .size(36.dp)
+                                .border(1.dp, NovaColors.GoldPrimary.copy(alpha = 0.4f), RoundedCornerShape(10.dp))
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
