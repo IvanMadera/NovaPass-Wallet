@@ -92,7 +92,8 @@ fun TicketViewerDialog(
                     pageCount = renderer.pageCount
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                pdfRenderer = null
+                pageCount = 0
             }
         }
     }
@@ -313,6 +314,7 @@ fun PdfDialogImage(
             renderMutex.withLock {
                 try {
                     val page = pdfRenderer.openPage(pageIndex)
+                    try {
                     // Renderizamos a alta resolución para que el zoom se vea bien
                     val width = (page.width * 2.5).toInt()
                     val height = (page.height * 2.5).toInt()
@@ -321,10 +323,12 @@ fun PdfDialogImage(
                     )
                     currentBitmap.eraseColor(android.graphics.Color.WHITE)
                     page.render(currentBitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                    page.close()
                     bitmap = currentBitmap
+                    } finally {
+                        page.close()
+                    }
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    bitmap = null
                 }
             }
         }

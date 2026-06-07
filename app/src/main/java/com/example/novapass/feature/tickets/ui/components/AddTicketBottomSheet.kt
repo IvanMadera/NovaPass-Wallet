@@ -93,6 +93,9 @@ fun AddTicketBottomSheet(
                 is AddTicketResult.InvalidFile -> {
                     Toast.makeText(context, "El archivo no parece ser un boleto válido", Toast.LENGTH_LONG).show()
                 }
+                is AddTicketResult.Error -> {
+                    Toast.makeText(context, result.message, Toast.LENGTH_LONG).show()
+                }
                 is AddTicketResult.Processed -> {
                     val added   = result.addedCount
                     val skipped = result.skippedCount
@@ -167,16 +170,23 @@ fun AddTicketBottomSheet(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .graphicsLayer {
+                            shadowElevation = 4.dp.toPx()
+                            shape = RoundedCornerShape(16.dp)
+                            clip = false
+                            ambientShadowColor = Color(0xFF000000)
+                            spotShadowColor = Color(0xFF000000)
+                        }
                         .clip(RoundedCornerShape(16.dp))
-                        .background(if (hasFile) NovaColors.GlassMedium else NovaColors.GlassLight)
-                        .border(1.dp, if (hasFile) NovaColors.GoldPrimary.copy(alpha = 0.5f) else NovaColors.BorderSubtle, RoundedCornerShape(16.dp))
+                        .background(NovaColors.GreenDark)
+                        .border(1.dp, if (hasFile) NovaColors.GoldPrimary.copy(alpha = 0.5f) else NovaColors.GoldPrimary.copy(alpha = 0.18f), RoundedCornerShape(16.dp))
                         .clickable { filePickerLauncher.launch(arrayOf("application/pdf")) }
                 ) {
                     Row(modifier = Modifier.padding(NovaSpacing.md), verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             if (hasFile) Icons.Default.CheckCircle else Icons.Default.Description,
                             contentDescription = null,
-                            tint = if (hasFile) NovaColors.GoldPrimary else NovaColors.TextSecondary.copy(alpha = 0.4f),
+                            tint = if (hasFile) NovaColors.GoldPrimary else NovaColors.TextSecondary.copy(alpha = 0.55f),
                             modifier = Modifier.size(24.dp)
                         )
                         Spacer(modifier = Modifier.width(NovaSpacing.md))
@@ -206,9 +216,16 @@ fun AddTicketBottomSheet(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = NovaSpacing.xs)
+                            .graphicsLayer {
+                                shadowElevation = if (isEditing) 5.dp.toPx() else 3.dp.toPx()
+                                shape = RoundedCornerShape(16.dp)
+                                clip = false
+                                ambientShadowColor = Color(0xFF000000)
+                                spotShadowColor = Color(0xFF000000)
+                            }
                             .clip(RoundedCornerShape(16.dp))
-                            .background(if (isEditing) NovaColors.GlassMedium else NovaColors.GlassLight)
-                            .border(1.dp, if (isEditing) NovaColors.GoldPrimary.copy(alpha = 0.3f) else NovaColors.BorderSubtle, RoundedCornerShape(16.dp))
+                            .background(if (isEditing) NovaColors.GreenBlack else NovaColors.GreenDark)
+                            .border(1.dp, if (isEditing) NovaColors.GoldPrimary.copy(alpha = 0.3f) else NovaColors.GoldPrimary.copy(alpha = 0.18f), RoundedCornerShape(16.dp))
                             .clickable { editingTicketIndex = if (isEditing) null else index }
                     ) {
                         Column(modifier = Modifier.padding(NovaSpacing.md)) {

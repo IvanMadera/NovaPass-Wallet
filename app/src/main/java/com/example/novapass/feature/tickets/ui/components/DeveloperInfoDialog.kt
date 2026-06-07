@@ -8,12 +8,11 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.Terminal
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -75,7 +74,7 @@ fun DeveloperInfoDialog(onDismiss: () -> Unit) {
                     .border(1.dp, NovaColors.GoldPrimary.copy(alpha = 0.3f), RoundedCornerShape(20.dp))
                     .clickable(enabled = false) { }
             ) {
-                NovaModalBackground {
+                Box(modifier = Modifier.background(NovaColors.GreenBlack)) {
                     Box(modifier = Modifier.fillMaxWidth()) {
                         IconButton(
                             onClick = onDismiss,
@@ -92,71 +91,85 @@ fun DeveloperInfoDialog(onDismiss: () -> Unit) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = NovaSpacing.lg, vertical = NovaSpacing.lg),
+                                .padding(horizontal = 24.dp, vertical = 30.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             // ── Ícono principal ──────────────────────────────
                             Box(
                                 modifier = Modifier
-                                    .size(72.dp)
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .background(NovaColors.GoldPrimary.copy(alpha = 0.12f))
-                                    .border(1.5.dp, NovaColors.GoldPrimary.copy(alpha = 0.4f), RoundedCornerShape(16.dp)),
+                                    .size(62.dp)
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(NovaColors.GoldPrimary.copy(alpha = 0.10f))
+                                    .border(1.5.dp, NovaColors.GoldPrimary.copy(alpha = 0.35f), RoundedCornerShape(14.dp)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Terminal,
+                                    imageVector = Icons.Default.Code,
                                     contentDescription = "Developer",
                                     tint = NovaColors.GoldPrimary,
-                                    modifier = Modifier.size(36.dp)
+                                    modifier = Modifier.size(30.dp)
                                 )
                             }
 
-                            Spacer(modifier = Modifier.height(NovaSpacing.md))
+                            Spacer(modifier = Modifier.height(18.dp))
 
                             // ── Título y versión ─────────────────────────────
                             Text(
-                                text = "NovaPass Wallet",
-                                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
-                                color = NovaColors.White,
+                                text = "Ivan Madera",
+                                style = MaterialTheme.typography.headlineSmall.copy(
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 26.sp
+                                ),
+                                color = NovaColors.GoldPrimary,
                                 textAlign = TextAlign.Center
                             )
                             Text(
-                                text = "Versión 2026.05.15",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = NovaColors.White.copy(alpha = 0.5f)
-                            )
-
-                            Spacer(modifier = Modifier.height(NovaSpacing.md))
-
-                            // ── Crédito del desarrollador ────────────────────
-                            Text(
-                                text = "Desarrollado con ❤️ por",
+                                text = "Desarrollador de NovaPass Wallet",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = NovaColors.White.copy(alpha = 0.7f)
-                            )
-                            Text(
-                                text = "Ivan Madera",
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 20.sp
-                                ),
-                                color = NovaColors.GoldPrimary
+                                color = NovaColors.White.copy(alpha = 0.72f),
+                                textAlign = TextAlign.Center
                             )
 
-                            Spacer(modifier = Modifier.height(NovaSpacing.lg))
+                            Spacer(modifier = Modifier.height(6.dp))
+
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    text = "Hecho con",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = NovaColors.White.copy(alpha = 0.48f)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Icon(
+                                    imageVector = Icons.Default.Favorite,
+                                    contentDescription = null,
+                                    tint = NovaColors.GoldPrimary,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
+
+                            Text(
+                                text = "Version 2026.06.07",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = NovaColors.White.copy(alpha = 0.42f),
+                                textAlign = TextAlign.Center
+                            )
+
+                            Spacer(modifier = Modifier.height(26.dp))
 
                             // ── GitHub Chip ───────────────────────────────────
                             Row(
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .background(NovaColors.GoldPrimary.copy(alpha = 0.1f))
-                                    .border(1.dp, NovaColors.GoldPrimary.copy(alpha = 0.3f), RoundedCornerShape(16.dp))
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(NovaColors.GoldPrimary.copy(alpha = 0.06f))
+                                    .border(1.dp, NovaColors.GoldPrimary.copy(alpha = 0.28f), RoundedCornerShape(14.dp))
                                     .clickable {
                                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/IvanMadera"))
                                         context.startActivity(intent)
                                     }
-                                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                                    .padding(horizontal = 18.dp, vertical = 10.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.Center
                             ) {
@@ -168,19 +181,19 @@ fun DeveloperInfoDialog(onDismiss: () -> Unit) {
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = "GitHub / IvanMadera",
+                                    text = "github.com/IvanMadera",
                                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
                                     color = NovaColors.GoldPrimary
                                 )
                             }
 
-                            Spacer(modifier = Modifier.height(NovaSpacing.lg))
+                            Spacer(modifier = Modifier.height(24.dp))
 
                             // ── Frase de cierre ──────────────────────────────
                             Text(
-                                text = "Diseño limpio. Código limpio.\nExperiencia premium.",
+                                text = "Codigo, diseno y experiencia\ncuidados al detalle.",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = NovaColors.White.copy(alpha = 0.3f),
+                                color = NovaColors.White.copy(alpha = 0.36f),
                                 textAlign = TextAlign.Center
                             )
                         }

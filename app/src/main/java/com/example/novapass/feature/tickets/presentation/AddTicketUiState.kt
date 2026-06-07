@@ -3,10 +3,8 @@ package com.example.novapass.feature.tickets.presentation
 import android.net.Uri
 import com.example.novapass.domain.model.ExtractedTicketData
 
-// ─────────────────────────────────────────────────────────────────────────
-// AddTicketUiState — estado completo del formulario de agregar boleto
-// Vive en el ViewModel → sobrevive rotaciones y recomposiciones
-// ─────────────────────────────────────────────────────────────────────────
+// Estado completo del formulario. Vive en el ViewModel para sobrevivir
+// rotaciones y recomposiciones.
 data class AddTicketUiState(
     val ticketName: String = "",
     val eventDate: String = "",
@@ -22,12 +20,9 @@ data class AddTicketUiState(
     val pendingTickets: List<ExtractedTicketData> = emptyList()
 )
 
-// ─────────────────────────────────────────────────────────────────────────
-// AddTicketResult — evento de un solo disparo para toasts / navegación
-// ─────────────────────────────────────────────────────────────────────────
+// Evento de un solo disparo para toasts y navegacion.
 sealed class AddTicketResult {
-    /** Uno o más boletos procesados; [skippedCount] > 0 si había duplicados. */
     data class Processed(val addedCount: Int, val skippedCount: Int) : AddTicketResult()
-    /** El PDF no contiene palabras clave de boleto válido. */
     object InvalidFile : AddTicketResult()
+    data class Error(val message: String) : AddTicketResult()
 }

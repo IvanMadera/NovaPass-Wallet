@@ -427,30 +427,30 @@ fun TicketListScreen(viewModel: TicketViewModel) {
                             .border(1.dp, NovaColors.GoldPrimary.copy(alpha = 0.3f), RoundedCornerShape(20.dp))
                             .clickable(enabled = false) { }
                     ) {
-                        NovaModalBackground {
+                        Box(modifier = Modifier.background(NovaColors.GreenBlack)) {
                             Column(
                                 modifier = Modifier
-                                    .padding(horizontal = 24.dp, vertical = 36.dp)
+                                    .padding(horizontal = 24.dp, vertical = 34.dp)
                                     .fillMaxWidth(),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(64.dp)
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .background(NovaColors.GoldPrimary.copy(alpha = 0.12f), RoundedCornerShape(12.dp))
-                                        .border(1.5.dp, NovaColors.GoldPrimary.copy(alpha = 0.4f), RoundedCornerShape(12.dp)),
+                                        .size(62.dp)
+                                        .clip(RoundedCornerShape(14.dp))
+                                        .background(NovaColors.GoldPrimary.copy(alpha = 0.10f), RoundedCornerShape(14.dp))
+                                        .border(1.5.dp, NovaColors.GoldPrimary.copy(alpha = 0.35f), RoundedCornerShape(14.dp)),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
                                         Icons.Default.Delete,
                                         contentDescription = null,
                                         tint = NovaColors.GoldPrimary,
-                                        modifier = Modifier.size(32.dp)
+                                        modifier = Modifier.size(30.dp)
                                     )
                                 }
                                 
-                                Spacer(modifier = Modifier.height(20.dp))
+                                Spacer(modifier = Modifier.height(18.dp))
                                 
                                 Text(
                                     "¿Eliminar boleto?",
@@ -459,17 +459,17 @@ fun TicketListScreen(viewModel: TicketViewModel) {
                                     textAlign = TextAlign.Center
                                 )
                                 
-                                Spacer(modifier = Modifier.height(16.dp))
+                                Spacer(modifier = Modifier.height(14.dp))
                                 
                                 Text(
-                                    "Esta acción no se puede deshacer. El boleto será eliminado permanentemente de tu wallet.",
+                                    "Esta acción no se puede deshacer.\nEl boleto se eliminará permanentemente.",
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = NovaColors.White.copy(alpha = 0.7f),
+                                    color = NovaColors.White.copy(alpha = 0.72f),
                                     textAlign = TextAlign.Center,
                                     modifier = Modifier.padding(horizontal = NovaSpacing.sm)
                                 )
                                 
-                                Spacer(modifier = Modifier.height(32.dp))
+                                Spacer(modifier = Modifier.height(30.dp))
                                 
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
@@ -478,7 +478,7 @@ fun TicketListScreen(viewModel: TicketViewModel) {
                                     OutlinedButton(
                                         onClick = { ticketToDelete = null },
                                         modifier = Modifier.weight(1f).height(54.dp),
-                                        border   = BorderStroke(1.dp, NovaColors.White.copy(alpha = 0.1f)),
+                                        border   = BorderStroke(1.dp, NovaColors.White.copy(alpha = 0.16f)),
                                         shape    = RoundedCornerShape(16.dp),
                                         colors   = ButtonDefaults.outlinedButtonColors(contentColor = NovaColors.White)
                                     ) {
@@ -498,7 +498,7 @@ fun TicketListScreen(viewModel: TicketViewModel) {
                                     }
                                 }
                             }
-                        } // NovaModalBackground
+                        }
                     }
                 }
             }

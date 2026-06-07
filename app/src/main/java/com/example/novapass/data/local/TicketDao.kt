@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -29,6 +30,26 @@ interface TicketDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTicket(ticket: TicketEntity)
+
+    @Transaction
+    suspend fun insertTicketIfNotDuplicate(ticket: TicketEntity): Boolean {
+        val duplicateCount = countDuplicates(
+            name = ticket.name,
+            eventDate = ticket.eventDate,
+            section = ticket.section,
+            row = ticket.row,
+            seat = ticket.seat,
+            uriString = ticket.uri,
+            pageIndex = ticket.pageIndex
+        )
+
+        return if (duplicateCount > 0) {
+            false
+        } else {
+            insertTicket(ticket)
+            true
+        }
+    }
 
     @Delete
     suspend fun deleteTicket(ticket: TicketEntity)

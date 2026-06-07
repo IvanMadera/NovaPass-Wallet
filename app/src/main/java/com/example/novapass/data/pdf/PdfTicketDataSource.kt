@@ -14,13 +14,12 @@ class PdfTicketDataSource(private val context: Context) {
 
     suspend fun isValidTicketPdf(uri: String): Boolean = withContext(Dispatchers.IO) {
         try {
-            val inputStream = context.contentResolver.openInputStream(Uri.parse(uri))
-                ?: return@withContext false
-            val document = PDDocument.load(inputStream)
-            val stripper = PDFTextStripper().apply { startPage = 1; endPage = 2 }
-            val text = stripper.getText(document).lowercase()
-            document.close()
-            inputStream.close()
+            val text = context.contentResolver.openInputStream(Uri.parse(uri))?.use { inputStream ->
+                PDDocument.load(inputStream).use { document ->
+                    val stripper = PDFTextStripper().apply { startPage = 1; endPage = 2 }
+                    stripper.getText(document).lowercase()
+                }
+            } ?: return@withContext false
 
             val keywords = listOf(
                 "boleto", "ticket", "butaca", "fila",
@@ -28,7 +27,6 @@ class PdfTicketDataSource(private val context: Context) {
             )
             keywords.any { text.contains(it) }
         } catch (e: Exception) {
-            e.printStackTrace()
             false
         }
     }
@@ -37,76 +35,76 @@ class PdfTicketDataSource(private val context: Context) {
         val result = mutableListOf<ExtractedTicketData>()
         try {
             val parsedUri = Uri.parse(uri)
-            val inputStream = context.contentResolver.openInputStream(parsedUri)
-                ?: return@withContext result
-            val document = PDDocument.load(inputStream)
-            val stripper = PDFTextStripper()
+            val displayName = getDisplayName(uri).uppercase()
+            context.contentResolver.openInputStream(parsedUri)?.use { inputStream ->
+                PDDocument.load(inputStream).use { document ->
+                    val stripper = PDFTextStripper()
 
-            for (pageIndex in 1..document.numberOfPages) {
-                stripper.startPage = pageIndex
-                stripper.endPage = pageIndex
-                val text = stripper.getText(document)
+                    for (pageIndex in 1..document.numberOfPages) {
+                        stripper.startPage = pageIndex
+                        stripper.endPage = pageIndex
+                        val text = stripper.getText(document)
 
-                var eventName = ""
-                var category = "Otro"
-                var section = ""
-                var row = ""
-                var seat = ""
+                        var eventName = ""
+                        var category = "Otro"
+                        var section = ""
+                        var row = ""
+                        var seat = ""
 
-                val lines = text.split("\n").map { it.trim() }
-                val vsLine = lines.find { it.contains(" VS ", ignoreCase = true) }
-                if (vsLine != null) {
-                    eventName = vsLine.substringBefore(" SERIE").trim().uppercase()
-                    category = "Deportes"
-                }
+                        val lines = text.split("\n").map { it.trim() }
+                        val vsLine = lines.find { it.contains(" VS ", ignoreCase = true) }
+                        if (vsLine != null) {
+                            eventName = vsLine.substringBefore(" SERIE").trim().uppercase()
+                            category = "Deportes"
+                        }
 
-                val date = extractEventDate(text)
-                val time = extractEventTime(text)
+                        val date = extractEventDate(text)
+                        val time = extractEventTime(text)
 
-                if (text.contains("SECCION", ignoreCase = true)) {
-                    section = Regex("(?i)SECCION\\s+([A-Z0-9 ]+)")
-                        .find(text)?.groupValues?.get(1)?.trim() ?: ""
-                }
+                        if (text.contains("SECCION", ignoreCase = true)) {
+                            section = Regex("(?i)SECCION\\s+([A-Z0-9 ]+)")
+                                .find(text)?.groupValues?.get(1)?.trim() ?: ""
+                        }
 
-                val rowSeat = Regex(
-                    "(?i)FILA\\s*\\|?\\s*BUTACA\\s*\\n\\s*([A-Z0-9]+)\\s+([A-Z0-9]+)"
-                ).find(text)
-                if (rowSeat != null) {
-                    row = rowSeat.groupValues[1]
-                    seat = rowSeat.groupValues[2]
-                }
+                        val rowSeat = Regex(
+                            "(?i)FILA\\s*\\|?\\s*BUTACA\\s*\\n\\s*([A-Z0-9]+)\\s+([A-Z0-9]+)"
+                        ).find(text)
+                        if (rowSeat != null) {
+                            row = rowSeat.groupValues[1]
+                            seat = rowSeat.groupValues[2]
+                        }
 
-                if (eventName.isBlank()) eventName = getDisplayName(uri).uppercase()
+                        if (eventName.isBlank()) eventName = displayName
 
-                if (eventName.isNotBlank() || section.isNotBlank() || seat.isNotBlank()) {
-                    result.add(
-                        ExtractedTicketData(
-                            eventName = eventName,
-                            category = category,
-                            date = date,
-                            time = time,
-                            location = "",
-                            section = section,
-                            row = row,
-                            seat = seat,
-                            pageIndex = pageIndex - 1
-                        )
-                    )
+                        if (eventName.isNotBlank() || section.isNotBlank() || seat.isNotBlank()) {
+                            result.add(
+                                ExtractedTicketData(
+                                    eventName = eventName,
+                                    category = category,
+                                    date = date,
+                                    time = time,
+                                    location = "",
+                                    section = section,
+                                    row = row,
+                                    seat = seat,
+                                    pageIndex = pageIndex - 1
+                                )
+                            )
+                        }
+                    }
                 }
             }
-
-            document.close()
-            inputStream.close()
         } catch (e: Exception) {
-            e.printStackTrace()
+            return@withContext emptyList()
         }
         result
     }
 
     suspend fun getDisplayName(uri: String): String = withContext(Dispatchers.IO) {
-        var name = ""
+        val parsedUri = Uri.parse(uri)
+        var name = parsedUri.lastPathSegment?.substringBeforeLast(".").orEmpty()
+
         try {
-            val parsedUri = Uri.parse(uri)
             context.contentResolver.query(parsedUri, null, null, null, null)?.use { cursor ->
                 val idx = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
                 if (cursor.moveToFirst() && idx >= 0) {
@@ -114,14 +112,14 @@ class PdfTicketDataSource(private val context: Context) {
                 }
             }
             context.contentResolver.openInputStream(parsedUri)?.use { stream ->
-                val doc = PDDocument.load(stream)
-                doc.documentInformation?.title
-                    ?.takeIf { it.isNotBlank() }
-                    ?.let { name = it }
-                doc.close()
+                PDDocument.load(stream).use { doc ->
+                    doc.documentInformation?.title
+                        ?.takeIf { it.isNotBlank() }
+                        ?.let { name = it }
+                }
             }
         } catch (e: Exception) {
-            // Return file name fallback.
+            // Keep the URI/file-name fallback.
         }
         name
     }
