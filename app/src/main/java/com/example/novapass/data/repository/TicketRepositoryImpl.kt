@@ -23,21 +23,10 @@ class TicketRepositoryImpl(
         var skippedCount = 0
 
         drafts.forEach { draft ->
-            val duplicateCount = ticketDao.countDuplicates(
-                name = draft.name,
-                eventDate = draft.eventDate,
-                section = draft.section,
-                row = draft.row,
-                seat = draft.seat,
-                uriString = draft.uri,
-                pageIndex = draft.pageIndex
-            )
-
-            if (duplicateCount > 0) {
-                skippedCount++
-            } else {
-                ticketDao.insertTicket(draft.toEntity())
+            if (ticketDao.insertTicketIfNotDuplicate(draft.toEntity())) {
                 addedCount++
+            } else {
+                skippedCount++
             }
         }
 

@@ -1,41 +1,103 @@
-# 🎫 NovaPass: Quantum Sapphire Edition
+# NovaPass Wallet
 
-**NovaPass** es una billetera digital (Wallet) nativa para Android, desarrollada con un enfoque en **diseño premium y alto rendimiento**. Permite organizar tus **boletos, pases y tickets en formato PDF** bajo un sistema de diseño de vanguardia.
+NovaPass Wallet es una app nativa para Android que organiza boletos digitales en PDF dentro de una experiencia visual sobria, premium y enfocada en uso real: encontrar el boleto rapido, abrirlo con brillo alto, escanear el QR y seguir con el evento.
 
-El objetivo de la app es eliminar la fricción al asistir a eventos, ofreciendo un acceso inmediato, estético y seguro a tus pases, centralizados en un entorno visualmente impactante.
+Version actual: `2026.06.07`
 
-## ✨ Características Principales
+## Caracteristicas
 
-- **💎 Diseño Quantum Sapphire (Glassmorphism)**: Una interfaz moderna basada en profundidad, transparencias y resplandores radiales ambientales que crean una experiencia inmersiva.
-- **🫧 Componentes de Cristal**: Los tickets y buscadores utilizan efectos de "vidrio" con bordes de precisión e insets de 0.5dp para evitar artefactos de renderizado.
-- **🎟️ Sistema de Perforación Real**: Los tickets cuentan con muescas laterales logradas mediante técnicas de composición offscreen (`BlendMode.Clear`), permitiendo que el fondo sea visible a través del boleto.
-- **🔆 Sombra de Resplandor Manual (Anti-Artifact)**: Solución personalizada de dibujo en `Canvas` para el botón de acción, evitando los errores de hardware (octágonos) y garantizando una sombra circular perfecta con aura dorada.
-- **📄 Visor PDF de Alta Fidelidad**: Renderizado nativo usando `android.graphics.pdf.PdfRenderer` con soporte para **Pinch-to-zoom**, ideal para escanear QRs y leer detalles pequeños.
-- **💾 Persistencia con Room**: Almacenamiento local seguro de metadatos y enlaces a archivos, con reactividad inmediata mediante `StateFlow`.
-- **📂 Gestión Inteligente de Archivos**: Uso de *Storage Access Framework* para importar PDFs sin duplicar archivos innecesariamente en el sistema.
+- Importacion de boletos PDF mediante Storage Access Framework.
+- Deteccion basica de archivos validos por contenido del PDF.
+- Extraccion de datos del boleto: nombre del evento, fecha, hora, seccion, fila, asiento y pagina.
+- Soporte para PDFs con multiples boletos, con edicion individual antes de guardar.
+- Lista principal con busqueda, orden por fecha y tarjetas de boleto con estilo fisico.
+- Archivo de boletos: archivar, desarchivar y alternar entre wallet y archivo.
+- Visor PDF seguro con brillo maximo temporal y soporte para pinch-to-zoom.
+- Persistencia local con Room y flujos reactivos con StateFlow.
+- Prevencion de duplicados por datos del boleto o por URI/pagina.
+- Easter egg con informacion del desarrollador.
 
-## 🛠️ Tecnologías y Arquitectura
+## Diseno
 
-NovaPass está construida sobre una arquitectura robusta **MVVM (Model-View-ViewModel)**.
+La interfaz usa un sistema visual oscuro en verde profundo con acentos dorados. Los tickets, inputs, barra de busqueda, modales y acciones principales comparten:
 
-- **Frontend**: Jetpack Compose (Material 3), Navigation Compose, UI Graphics Avanzado.
-- **Backend Local**: Room Persistence Library.
-- **Lógica de Dibujo**: `DrawScope`, Composición Offscreen, `PathEffect` para líneas punteadas dinámicas.
-- **Lenguaje**: Kotlin + Coroutines para procesamiento asíncrono y seguro de PDFs.
-- **Tokens de Diseño**: Sistema centralizado de colores en `Color.kt` (Deep Navy, Premium Gold, Emerald Tint).
+- fondos opacos en verde oscuro,
+- bordes dorados sutiles,
+- elevacion ligera,
+- esquinas consistentes,
+- jerarquia visual clara entre contenedores e inputs.
 
-## 🚀 Requisitos Técnicos
+La intencion es que la app se sienta premium sin depender de efectos glass pesados ni decoracion innecesaria.
 
-- **Min SDK**: 31 (Android 12+)
-- **Target SDK**: 35 (Android 15)
-- **Soporte**: Optimizado para pantallas OLED con negros profundos y altos contrastes.
+## Arquitectura
 
-## 📦 Instalación y Uso
+NovaPass sigue una estructura MVVM con separacion por capas:
 
-1.  Clona el repositorio.
-2.  Abre el proyecto en **Android Studio (Ladybug o superior)**.
-3.  Sincroniza `Gradle` para obtener las dependencias oficiales de AndroidX.
-4.  Ejecuta la aplicación en un dispositivo físico para apreciar los efectos de profundidad y resplandor.
+- `feature/tickets/ui`: pantallas, bottom sheets, dialogs y componentes Compose.
+- `feature/tickets/presentation`: `TicketViewModel` y estado de UI.
+- `domain`: modelos, repositorios y casos de uso.
+- `data`: Room, mappers, repositorios e integracion con PDFBox.
+- `core/design`: tema, colores, spacing y componentes reutilizables.
 
----
-*NovaPass es un ejemplo de cómo la potencia de Jetpack Compose puede elevar una herramienta funcional a una pieza de diseño de software premium.*
+## Stack
+
+- Kotlin
+- Jetpack Compose + Material 3
+- Navigation Compose
+- Room
+- Coroutines + StateFlow
+- Android PdfRenderer
+- PdfBox Android
+- Gradle Version Catalog
+- R8 / resource shrinking en release
+
+## Seguridad y robustez
+
+- Backups del sistema desactivados para evitar respaldar datos locales de tickets.
+- Reglas de backup/data extraction excluyen database, shared preferences y files.
+- Permisos de URI persistentes para acceder a PDFs seleccionados por el usuario.
+- Manejo controlado de errores al importar y guardar boletos.
+- Recursos PDF cerrados de forma segura.
+- Build release minificado y con recursos reducidos.
+- Artefactos generados como APKs, logs y ZIPs locales quedan fuera de Git.
+
+## Requisitos
+
+- Min SDK: 31
+- Target SDK: 35
+- Compile SDK: 36
+- Android Studio reciente con soporte para Compose
+- Dispositivo fisico recomendado para validar brillo, PDF y escaneo de QR
+
+## Desarrollo
+
+Compilar debug:
+
+```powershell
+.\gradlew.bat :app:compileDebugKotlin
+```
+
+Generar APK release:
+
+```powershell
+.\gradlew.bat :app:assembleRelease
+```
+
+Para instalar una version release en un dispositivo, genera un APK firmado desde Android Studio:
+
+`Build > Generate Signed App Bundle / APK > APK`
+
+El keystore local no debe subirse al repositorio.
+
+## Notas de Git
+
+No se deben versionar:
+
+- APKs o bundles generados,
+- logs,
+- ZIPs temporales,
+- keystores,
+- `local.properties`,
+- carpetas de build.
+
+El APK release puede conservarse localmente para pruebas o compartirse por fuera del repositorio.

@@ -80,53 +80,65 @@ class TicketViewModel(
         viewModelScope.launch {
             _formState.update { it.copy(isVerifying = true, selectedUri = uri) }
 
-            when (val result = importPdfTicketsUseCase(uri.toString())) {
-                is ImportPdfResult.InvalidFile -> {
-                    _formState.update {
-                        it.copy(
-                            isVerifying = false,
-                            selectedUri = null,
-                            selectedFileName = ""
-                        )
-                    }
-                    _addTicketResult.emit(AddTicketResult.InvalidFile)
-                }
-
-                is ImportPdfResult.Success -> {
-                    _formState.update { state ->
-                        val dataList = result.tickets
-                        when {
-                            dataList.isEmpty() -> state.copy(
+            try {
+                when (val result = importPdfTicketsUseCase(uri.toString())) {
+                    is ImportPdfResult.InvalidFile -> {
+                        _formState.update {
+                            it.copy(
                                 isVerifying = false,
-                                selectedFileName = result.displayName,
-                                pendingTickets = emptyList()
+                                selectedUri = null,
+                                selectedFileName = ""
                             )
+                        }
+                        _addTicketResult.emit(AddTicketResult.InvalidFile)
+                    }
 
-                            dataList.size == 1 -> {
-                                val d = dataList[0]
-                                state.copy(
+                    is ImportPdfResult.Success -> {
+                        _formState.update { state ->
+                            val dataList = result.tickets
+                            when {
+                                dataList.isEmpty() -> state.copy(
+                                    isVerifying = false,
+                                    selectedFileName = result.displayName,
+                                    pendingTickets = emptyList()
+                                )
+
+                                dataList.size == 1 -> {
+                                    val d = dataList[0]
+                                    state.copy(
+                                        isVerifying = false,
+                                        selectedFileName = result.displayName,
+                                        pendingTickets = dataList,
+                                        ticketName = d.eventName,
+                                        selectedCategory = d.category,
+                                        eventDate = d.date,
+                                        eventTime = d.time,
+                                        section = d.section,
+                                        row = d.row,
+                                        seat = d.seat
+                                    )
+                                }
+
+                                else -> state.copy(
                                     isVerifying = false,
                                     selectedFileName = result.displayName,
                                     pendingTickets = dataList,
-                                    ticketName = d.eventName,
-                                    selectedCategory = d.category,
-                                    eventDate = d.date,
-                                    eventTime = d.time,
-                                    section = d.section,
-                                    row = d.row,
-                                    seat = d.seat
+                                    ticketName = dataList[0].eventName
                                 )
                             }
-
-                            else -> state.copy(
-                                isVerifying = false,
-                                selectedFileName = result.displayName,
-                                pendingTickets = dataList,
-                                ticketName = dataList[0].eventName
-                            )
                         }
                     }
                 }
+            } catch (e: Exception) {
+                _formState.update {
+                    it.copy(
+                        isVerifying = false,
+                        selectedUri = null,
+                        selectedFileName = "",
+                        pendingTickets = emptyList()
+                    )
+                }
+                _addTicketResult.emit(AddTicketResult.Error("No se pudo leer el archivo seleccionado"))
             }
         }
     }
@@ -142,19 +154,24 @@ class TicketViewModel(
                     Intent.FLAG_GRANT_READ_URI_PERMISSION
                 )
             } catch (e: Exception) {
-                e.printStackTrace()
+                _addTicketResult.emit(AddTicketResult.Error("No se pudo conservar el permiso del archivo"))
+                return@launch
             }
 
-            val drafts = state.toDrafts(uri.toString())
-            val result = saveTicketsUseCase(drafts)
+            try {
+                val drafts = state.toDrafts(uri.toString())
+                val result = saveTicketsUseCase(drafts)
 
-            _addTicketResult.emit(
-                AddTicketResult.Processed(
-                    addedCount = result.addedCount,
-                    skippedCount = result.skippedCount
+                _addTicketResult.emit(
+                    AddTicketResult.Processed(
+                        addedCount = result.addedCount,
+                        skippedCount = result.skippedCount
+                    )
                 )
-            )
-            resetForm()
+                resetForm()
+            } catch (e: Exception) {
+                _addTicketResult.emit(AddTicketResult.Error("No se pudo guardar el boleto"))
+            }
         }
     }
 

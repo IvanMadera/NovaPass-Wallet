@@ -13,3 +13,11 @@
 .externalNativeBuild
 .cxx
 local.properties
+*.log
+*.zip
+!gradle/wrapper/gradle-wrapper.jar
+*.apk
+*.aab
+*.apks
+*.idsig
+/app/release/

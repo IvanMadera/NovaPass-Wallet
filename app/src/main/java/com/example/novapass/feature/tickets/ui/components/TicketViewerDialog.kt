@@ -92,7 +92,8 @@ fun TicketViewerDialog(
                     pageCount = renderer.pageCount
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                pdfRenderer = null
+                pageCount = 0
             }
         }
     }
@@ -143,7 +144,7 @@ fun TicketViewerDialog(
                     .fillMaxHeight(0.85f)
                     .graphicsLayer { scaleX = cardScale; scaleY = cardScale }
                     .background(NovaColors.GreenBlack, RoundedCornerShape(16.dp))
-                    .border(1.dp, NovaColors.GoldDark.copy(alpha = 0.4f), RoundedCornerShape(16.dp))
+                    .border(1.dp, NovaColors.GoldPrimary.copy(alpha = 0.3f), RoundedCornerShape(16.dp))
                     .clickable(enabled = false) { }
             ) {
                 Column(modifier = Modifier.fillMaxSize()) {
@@ -156,9 +157,11 @@ fun TicketViewerDialog(
                     ) {
                         // Icono pequeño y sutil
                         Surface(
-                            color = NovaColors.GoldPrimary.copy(alpha = 0.1f),
-                            shape = CircleShape,
-                            modifier = Modifier.size(36.dp)
+                            color = NovaColors.GoldPrimary.copy(alpha = 0.12f),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier
+                                .size(36.dp)
+                                .border(1.dp, NovaColors.GoldPrimary.copy(alpha = 0.4f), RoundedCornerShape(10.dp))
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
@@ -311,6 +314,7 @@ fun PdfDialogImage(
             renderMutex.withLock {
                 try {
                     val page = pdfRenderer.openPage(pageIndex)
+                    try {
                     // Renderizamos a alta resolución para que el zoom se vea bien
                     val width = (page.width * 2.5).toInt()
                     val height = (page.height * 2.5).toInt()
@@ -319,10 +323,12 @@ fun PdfDialogImage(
                     )
                     currentBitmap.eraseColor(android.graphics.Color.WHITE)
                     page.render(currentBitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                    page.close()
                     bitmap = currentBitmap
+                    } finally {
+                        page.close()
+                    }
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    bitmap = null
                 }
             }
         }
